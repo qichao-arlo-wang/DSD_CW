@@ -1,0 +1,67 @@
+# Copyright (C) 2018  Intel Corporation. All rights reserved.
+# Your use of Intel Corporation's design tools, logic functions 
+# and other software and tools, and its AMPP partner logic 
+# functions, and any output files from any of the foregoing 
+# (including device programming or simulation files), and any 
+# associated documentation or information are expressly subject 
+# to the terms and conditions of the Intel Program License 
+# Subscription Agreement, the Intel Quartus Prime License Agreement,
+# the Intel FPGA IP License Agreement, or other applicable license
+# agreement, including, without limitation, that your use is for
+# the sole purpose of programming logic devices manufactured by
+# Intel and sold by Intel or its authorized distributors.  Please
+# refer to the applicable agreement for further details.
+
+# Quartus Prime Version 18.1.0 Build 625 09/12/2018 SJ Lite Edition
+# File: D:\intelFPGA_lite\hello_world_assignments.csv
+# Generated on: Sat Jan 27 23:26:12 2024
+
+Status,From,To,Assignment Name,Value,Enabled,Entity,Comment,Tag
+Ok,,iCLK_50,Location,PIN_N14,Yes,,,
+Ok,,DRAM_DQ[0],Location,PIN_Y21,Yes,,,
+Ok,,DRAM_DQ[1],Location,PIN_Y20,Yes,,,
+Ok,,DRAM_DQ[10],Location,PIN_H21,Yes,,,
+Ok,,DRAM_DQ[11],Location,PIN_H22,Yes,,,
+Ok,,DRAM_DQ[12],Location,PIN_G22,Yes,,,
+Ok,,DRAM_DQ[13],Location,PIN_G20,Yes,,,
+Ok,,DRAM_DQ[14],Location,PIN_G19,Yes,,,
+Ok,,DRAM_DQ[15],Location,PIN_F22,Yes,,,
+Ok,,DRAM_DQ[2],Location,PIN_AA22,Yes,,,
+Ok,,DRAM_DQ[3],Location,PIN_AA21,Yes,,,
+Ok,,DRAM_DQ[4],Location,PIN_Y22,Yes,,,
+Ok,,DRAM_DQ[5],Location,PIN_W22,Yes,,,
+Ok,,DRAM_DQ[6],Location,PIN_W20,Yes,,,
+Ok,,DRAM_DQ[7],Location,PIN_V21,Yes,,,
+Ok,,DRAM_DQ[8],Location,PIN_P21,Yes,,,
+Ok,,DRAM_DQ[9],Location,PIN_J22,Yes,,,
+Ok,,oDRAM_BA[1],Location,PIN_T22,Yes,,,
+Ok,,oDRAM_BA[0],Location,PIN_T21,Yes,,,
+Ok,,oDRAM_CAS_N,Location,PIN_U21,Yes,,,
+Ok,,oDRAM_CKE,Location,PIN_N22,Yes,,,
+Ok,,oDRAM_CLK,Location,PIN_L14,Yes,,,
+Ok,,oDRAM_CS_N,Location,PIN_U20,Yes,,,
+Ok,,oDRAM_RAS_N,Location,PIN_U22,Yes,,,
+Ok,,oDRAM_WE_N,Location,PIN_V20,Yes,,,
+Ok,,oDRAM_A[11],Location,PIN_P20,Yes,,,
+Ok,,oDRAM_A[10],Location,PIN_T20,Yes,,,
+Ok,,oDRAM_A[9],Location,PIN_P19,Yes,,,
+Ok,,oDRAM_A[8],Location,PIN_P18,Yes,,,
+Ok,,oDRAM_A[7],Location,PIN_R18,Yes,,,
+Ok,,oDRAM_A[6],Location,PIN_T19,Yes,,,
+Ok,,oDRAM_A[5],Location,PIN_T18,Yes,,,
+Ok,,oDRAM_A[4],Location,PIN_U19,Yes,,,
+Ok,,oDRAM_A[3],Location,PIN_U18,Yes,,,
+Ok,,oDRAM_A[2],Location,PIN_V18,Yes,,,
+Ok,,oDRAM_A[1],Location,PIN_W19,Yes,,,
+Ok,,oDRAM_A[0],Location,PIN_U17,Yes,,,
+Ok,,oDRAM_DQM[1],Location,PIN_J21,Yes,,,
+Ok,,oDRAM_DQM[0],Location,PIN_V22,Yes,,,
+Ok,,oLEDG[1],Location,PIN_A9,Yes,,,
+Ok,,oLEDG[2],Location,PIN_A10,Yes,,,
+Ok,,oLEDG[3],Location,PIN_B10,Yes,,,
+Ok,,oLEDG[4],Location,PIN_D13,Yes,,,
+Ok,,oLEDG[5],Location,PIN_C13,Yes,,,
+Ok,,oLEDG[6],Location,PIN_E14,Yes,,,
+Ok,,oLEDG[7],Location,PIN_D14,Yes,,,
+Ok,,oLEDG[0],Location,PIN_A8,Yes,,,
+,<<new>>,<<new>>,<<new>>,,,,,
