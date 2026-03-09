@@ -120,3 +120,47 @@ Release/
 # PDFs / documentation (KEEP)
 ###############################################################################
 # intentionally not ignored
+
+###############################################################################
+# Local tooling / verification artifacts (Python + Verilator + cocotb)
+###############################################################################
+.claude/
+.venv/
+**/.venv/
+.pycache/
+**/.pycache/
+__pycache__/
+**/__pycache__/
+obj_dir/
+**/obj_dir/
+.vbuild/
+**/.vbuild/
+sim_build/
+**/sim_build/
+results.xml
+**/results.xml
+
+###############################################################################
+# Local extracted text scratch files
+###############################################################################
+tmp_*.txt
+
+###############################################################################
+# LaTeX intermediates
+###############################################################################
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex.gz
+*.toc
+*.vrb

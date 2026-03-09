@@ -1,0 +1,379 @@
+\documentclass[a4paper,10pt,twocolumn]{article}
+
+% -- Packages --
+\usepackage[a4paper,top=18mm,bottom=18mm,left=16mm,right=16mm]{geometry}
+\usepackage[english]{babel}
+\usepackage{placeins}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+% -- Formatting --
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.4em}
+\titleformat{\section}{\normalfont\normalsize\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\small\bfseries}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}{\normalfont\small\itshape}{\thesubsubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{0.8em}{0.3em}
+\titlespacing*{\subsection}{0pt}{0.5em}{0.2em}
+\captionsetup{font=small, skip=4pt}
+\setlist[enumerate]{nosep, leftmargin=1.2em}
+\setlist[itemize]{nosep, leftmargin=1.2em}
+
+\begin{document}
+
+% =============================================================
+\twocolumn[{%
+\begin{center}
+    \vspace*{0.3em}
+    {\LARGE \textbf{Digital System Design Report 3}} \\[0.4em]
+    {\large Group 29} \\[0.3em]
+    \begin{tabular}{rl}
+        \textbf{Authors:} & Michael Chenxu Li (mcl123), Qichao (Arlo) Wang (qw823)
+    \end{tabular}
+    \vspace{0.5em}
+    \hrule
+    \vspace{0.6em}
+\end{center}
+}]
+
+% =============================================================
+\section{Scope and Objectives}
+% =============================================================
+
+This report covers Task 7 (7a/7b/7c) and Task 8 of the coursework.
+The target function is
+\[
+F(x)=\sum_i f(x_i),\quad f(x)=0.5x + x^3\cos\left(\frac{x-128}{128}\right)
+\]
+under single-precision floating-point representation.
+
+\textbf{What this report demonstrates:}
+\begin{itemize}
+    \item Task 7a: CORDIC error analysis and parameter selection using Monte Carlo.
+    \item Task 7b: CORDIC architecture choices, latency/timing/resource trade-offs.
+    \item Task 7c: Step-2 and Step-3 hardware architectures, integration and performance.
+    \item Task 8: Throughput-oriented final architecture and comparison to Task 7 best case.
+\end{itemize}
+
+\textbf{To fill:} add board/tool versions, exact build IDs, and measurement setup (timer source, number of runs, averaging method).
+
+% =============================================================
+\section{Experimental Methodology}
+% =============================================================
+
+\subsection{Hardware/Software Setup}
+\textbf{To fill:}
+\begin{itemize}
+    \item FPGA board and clock target (50 MHz).
+    \item Quartus / Nios II EDS / simulator versions.
+    \item Compiler flags and BSP settings.
+\end{itemize}
+
+\subsection{Test Cases and Metrics}
+Use the three coursework test vectors:
+\begin{itemize}
+    \item C1: $X=0:5:255$
+    \item C2: $X=0:1/8:255$
+    \item C3: $X=0:1/256:255$
+\end{itemize}
+
+Metrics to report:
+\begin{itemize}
+    \item Latency / execution time.
+    \item FPGA resources (ALMs/LEs, DSPs, memory bits).
+    \item Numerical error vs double-precision reference.
+    \item Timing closure (worst slack at 50 MHz).
+\end{itemize}
+
+\subsection{Reference Models}
+\textbf{To fill:} MATLAB/Python reference equations, random seeds, Monte Carlo sample count, confidence interval method.
+
+% =============================================================
+\section{Task 7a: CORDIC Analysis (10\%)}
+% =============================================================
+
+\subsection{Design Space Exploration}
+Explain how CORDIC iterations and fixed-point wordlength were swept.
+State explicitly that $x \sim U[-1,1]$ (single precision) and that the target is
+MSE $< 2.4\\times 10^{-11}$ with 95\% confidence.
+
+\begin{table}[H]
+\centering
+\caption{Task 7a parameter sweep summary (placeholder).}
+\label{tab:t7a_sweep}
+\small
+\begin{tabular}{rrrrrr}
+\toprule
+N\_iter & W & FRAC & $2^{-i}$ est. & MSE & 95\% CI upper \\
+\midrule
+18 & 28 & 22 & TODO & TODO & TODO \\
+18 & 26 & 20 & TODO & TODO & TODO \\
+20 & 28 & 22 & TODO & TODO & TODO \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Analytical Error Estimate ($2^{-i}$)}
+\textbf{To fill:}
+\begin{itemize}
+    \item Derive/quote the iteration-based error estimate using $2^{-i}$.
+    \item Compare this estimate against simulation observations.
+    \item Explain why this estimate is useful for narrowing the search space.
+\end{itemize}
+
+\subsection{Selected Configuration and Justification}
+\textbf{To fill:}
+\begin{itemize}
+    \item Final selected $(N_{iter}, W, FRAC)$.
+    \item Why this point is the best trade-off under the error constraint.
+    \item Evidence that CI upper bound satisfies requirement.
+\end{itemize}
+
+\subsection{Impact on Accuracy and Latency}
+Discuss how increasing iterations and bit-width affects:
+\begin{itemize}
+    \item CORDIC cosine error,
+    \item CORDIC cycle count,
+    \item area footprint.
+\end{itemize}
+
+% =============================================================
+\section{Task 7b: CORDIC Architecture and Implementation (10\%)}
+% =============================================================
+
+\subsection{CORDIC Microarchitecture}
+\textbf{To fill:}
+\begin{itemize}
+    \item Rotation mode equations and pipeline/stage arrangement.
+    \item Number of HW stages and iterations per cycle.
+    \item Why LUT or vendor cosine IP is not used.
+    \item Comparison of single-iteration/cycle vs multi-iteration/cycle options.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox[c][28mm][c]{0.95\linewidth}{\centering Placeholder: CORDIC datapath/FSM diagram}}
+\caption{CORDIC architecture used in Task 7b.}
+\label{fig:t7b_cordic_arch}
+\end{figure}
+
+\subsection{Verification and Timing}
+\textbf{To fill:}
+\begin{itemize}
+    \item Simulation waveform checks (input/output and done timing).
+    \item Measured latency in cycles.
+    \item Timing report summary at 50 MHz.
+    \item If timing fails for any candidate architecture, document it and explain.
+\end{itemize}
+
+% =============================================================
+\section{Task 7c: Single Custom Instruction Integration (15\%)}
+% =============================================================
+
+\subsection{Step 2: Three-Accelerator System}
+Describe the intermediate architecture with separate accelerators:
+FP\_MUL, FP\_ADD/SUB, and COS.
+
+\begin{table}[H]
+\centering
+\caption{Step-2 per-accelerator latency (placeholder).}
+\label{tab:t7c_step2_latency}
+\small
+\begin{tabular}{lrr}
+\toprule
+Block & Predicted cycles & Measured cycles \\
+\midrule
+FP\_MUL & TODO & TODO \\
+FP\_ADD/SUB & TODO & TODO \\
+COS (CORDIC) & TODO & TODO \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Step-2 whole-function timing under Nios scheduling (placeholder).}
+\label{tab:t7c_step2_whole}
+\small
+\begin{tabular}{lrrr}
+\toprule
+Case & Total time (ms) & Sum accel time (ms) & Overhead (ms) \\
+\midrule
+C1 & TODO & TODO & TODO \\
+C2 & TODO & TODO & TODO \\
+C3 & TODO & TODO & TODO \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Step 3: Final Single-CI Block}
+Describe integrated FSM + register file architecture that computes one $f(x)$ call.
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox[c][28mm][c]{0.95\linewidth}{\centering Placeholder: final Task 7c block diagram}}
+\caption{Task 7c final architecture (single custom instruction for $f(x)$).}
+\label{fig:t7c_final_arch}
+\end{figure}
+
+\subsection{Control and Data Flow}
+\textbf{To fill:}
+\begin{itemize}
+    \item For both Step-2 and Step-3: how data is passed between CPU/custom block/sub-blocks.
+    \item FSM states and transitions.
+    \item Data path registers and intermediate values.
+    \item Resource reuse (single instantiation of each sub-block).
+\end{itemize}
+
+\subsection{Performance, Resource, and Error Results}
+\begin{table}[H]
+\centering
+\caption{Task 7c summary across C1/C2/C3 (placeholder).}
+\label{tab:t7c_summary}
+\small
+\begin{tabular}{lrrr}
+\toprule
+Metric & C1 & C2 & C3 \\
+\midrule
+Latency of $F(x)$ (ms) & TODO & TODO & TODO \\
+Error vs double reference & TODO & TODO & TODO \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{To fill:} resource table (ALMs/DSP/M20K) and comparison against Step-2 architecture.
+
+\subsection{Expected vs Observed Latency}
+Discuss discrepancy between isolated block latency and integrated Nios system latency
+(processor call overhead, memory traffic, blocking CI behavior).
+
+\subsection{Standalone vs Nios-Integrated Throughput}
+\textbf{To fill:}
+\begin{itemize}
+    \item Report best-call interval when the block is used standalone (new call immediately after done).
+    \item Report effective call interval when invoked through Nios.
+    \item Explain discrepancy using interface/control overhead.
+\end{itemize}
+
+\subsection{Ideal Lower Bound (Dummy Combinational CI)}
+\textbf{To fill:}
+\begin{itemize}
+    \item Implement/measure an ideal one-cycle dummy CI for C3.
+    \item Report ideal execution-time lower bound and compare with measured results.
+\end{itemize}
+
+% =============================================================
+\section{Task 8: Throughput-Oriented Final Design (10\%)}
+% =============================================================
+
+\subsection{Architecture Evolution from Task 7}
+\textbf{To fill:}
+\begin{itemize}
+    \item What was changed relative to Task 7 (e.g., accumulation strategy, interface, scheduling).
+    \item Whether CORDIC was reused or redesigned, and why.
+    \item Why the chosen interface level was selected against alternatives.
+\end{itemize}
+
+\subsection{Interface Options vs Marking Levels}
+\begin{table}[H]
+\centering
+\caption{Task-8 interface option mapping (placeholder).}
+\label{tab:t8_interface_levels}
+\small
+\begin{tabular}{lp{0.47\linewidth}}
+\toprule
+Option & Description / achieved in this work \\
+\midrule
+L1 & Separate CI for $f(x)$ and sum (TODO) \\
+L2 & Input $(x,\text{current\_sum})$ output new sum (TODO) \\
+L3 & Input $(x_1,x_2)$ output $f(x_1)+f(x_2)$ (TODO) \\
+L4 & Input $(x_1,x_2,op)$ output with accumulated sum (TODO) \\
+L5 & Pipelined: accepts new input before previous inner-function completion (TODO) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Final Task-8 Datapath and Scheduling}
+\begin{figure}[H]
+\centering
+\fbox{\parbox[c][28mm][c]{0.95\linewidth}{\centering Placeholder: Task 8 datapath and control}}
+\caption{Task 8 architecture and pipeline schedule.}
+\label{fig:t8_arch}
+\end{figure}
+
+\subsection{Task 8 Results}
+\begin{table}[H]
+\centering
+\caption{Task 8 performance/resources/error (placeholder).}
+\label{tab:t8_results}
+\small
+\begin{tabular}{lrrr}
+\toprule
+Metric & C1 & C2 & C3 \\
+\midrule
+Latency of $F(x)$ (ms) & TODO & TODO & TODO \\
+Code size & TODO & TODO & TODO \\
+Error vs double reference & TODO & TODO & TODO \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Pipeline Utilisation and Throughput}
+\textbf{To fill:}
+\begin{itemize}
+    \item How often a new $x$ can be accepted (initiation interval).
+    \item Theoretical throughput vs measured throughput.
+    \item Assumptions and bottlenecks (CPU blocking, memory subsystem, CI protocol).
+\end{itemize}
+
+% =============================================================
+\section{Cross-Task Comparison and Discussion}
+% =============================================================
+
+\subsection{Performance vs Resource Plot}
+\begin{figure}[H]
+\centering
+\fbox{\parbox[c][28mm][c]{0.95\linewidth}{\centering Placeholder: performance vs resources}}
+\caption{Performance-resource trade-off from baseline to Task 8 final design.}
+\label{fig:perf_vs_res}
+\end{figure}
+
+\subsection{Key Trade-offs}
+\begin{itemize}
+    \item Latency-oriented vs throughput-oriented design decisions.
+    \item CPU orchestration overhead vs internal FSM orchestration.
+    \item Effect of CORDIC precision choice on area and timing.
+\end{itemize}
+
+% =============================================================
+\section{Conclusions}
+% =============================================================
+
+\textbf{To fill with 4--6 concise bullets:}
+\begin{enumerate}
+    \item Main achievement for Task 7a/7b/7c.
+    \item Main achievement for Task 8.
+    \item Best measured speedup and cost in FPGA resources.
+    \item Remaining bottlenecks and future improvement opportunities.
+\end{enumerate}
+
+% =============================================================
+\section*{Appendix A: Reproducibility Checklist}
+% =============================================================
+
+\begin{itemize}
+    \item Git commit hash: TODO
+    \item Toolchain versions: TODO
+    \item Simulation/test commands: TODO
+    \item Quartus report files used: TODO
+\end{itemize}
+
+\FloatBarrier
+\end{document}
