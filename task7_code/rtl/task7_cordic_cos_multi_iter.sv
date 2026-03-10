@@ -13,11 +13,24 @@ module task7_cordic_cos_multi_iter #(
     output logic done,
     output logic signed [W-1:0] cos_out
 );
+    // Detailed note:
+    // ITER_PER_CYCLE is the main latency/area knob:
+    // larger value reduces cycles but increases per-cycle combinational work.
+    // Multi-iteration-per-cycle CORDIC (rotation mode).
+    // - Input/output are fixed-point signed values.
+    // - angle_in is expected in [-1, 1] range (radians equivalent used by coursework flow).
+    // - cos_out is scaled by 2^FRAC.
+    //
+    // Latency model:
+    //   cycles ~= ceil(N_ITER / ITER_PER_CYCLE) + control overhead.
+    // Increasing ITER_PER_CYCLE lowers latency but increases combinational depth.
     localparam int MAX_ITER = 24;
     localparam int IW = (N_ITER > 1) ? $clog2(N_ITER+1) : 1;
 
-    // The constants below are precomputed for FRAC = 22.
-    // If FRAC is changed, regenerate this table.
+    // The constants below are precomputed for FRAC = 22:
+    // - K_CONST = CORDIC gain compensation
+    // - ATAN_TABLE[i] = atan(2^-i) in fixed-point
+    // If FRAC changes, both constants must be regenerated together.
     localparam logic signed [W-1:0] K_CONST = $signed(28'sd2547003);
     localparam logic signed [W-1:0] ATAN_TABLE [0:MAX_ITER-1] = '{
         $signed(28'sd3294199),
@@ -80,7 +93,8 @@ module task7_cordic_cos_multi_iter #(
             done <= 1'b0;
 
             if (start && !busy) begin
-                // Rotation mode CORDIC for cosine: start from [K, 0, angle].
+                // Rotation mode initialization:
+                // start vector [x,y] = [K, 0], then rotate by residual z=angle.
                 x_reg    <= K_CONST;
                 y_reg    <= '0;
                 z_reg    <= angle_in;
@@ -92,13 +106,16 @@ module task7_cordic_cos_multi_iter #(
                 z_tmp = z_reg;
                 idx_tmp = iter_idx;
 
+                // Execute ITER_PER_CYCLE micro-rotations in one clock.
                 for (k = 0; k < ITER_PER_CYCLE; k = k + 1) begin
                     if (idx_tmp < IW'(N_ITER)) begin
                         if (z_tmp >= 0) begin
+                            // Positive residual angle: rotate clockwise.
                             x_next = x_tmp - (y_tmp >>> idx_tmp);
                             y_next = y_tmp + (x_tmp >>> idx_tmp);
                             z_next = z_tmp - ATAN_TABLE[idx_tmp];
                         end else begin
+                            // Negative residual angle: rotate counter-clockwise.
                             x_next = x_tmp + (y_tmp >>> idx_tmp);
                             y_next = y_tmp - (x_tmp >>> idx_tmp);
                             z_next = z_tmp + ATAN_TABLE[idx_tmp];
@@ -118,6 +135,7 @@ module task7_cordic_cos_multi_iter #(
 
                 if (idx_tmp >= IW'(N_ITER)) begin
                     busy    <= 1'b0;
+                    // done is a one-cycle pulse when final iteration batch completes.
                     done    <= 1'b1;
                     cos_out <= x_tmp;
                 end

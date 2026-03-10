@@ -1,6 +1,9 @@
 `timescale 1ns/1ps
 
 module tb_task7_perf;
+    // Detailed note:
+    // This TB is meant for quick latency sanity checks during iteration.
+    // For strict per-block isolation, instantiate and trigger one DUT at a time.
     logic clk;
     logic reset;
     logic clk_en;
@@ -14,6 +17,13 @@ module tb_task7_perf;
 
     integer c_mul, c_add, c_cos, c_f;
 
+    // This TB intentionally uses a shared start/data bus to mimic a common CI interface style.
+    // Important interpretation note:
+    // - A start pulse can trigger all instantiated DUTs here.
+    // - pulse_and_measure() tracks only one selected done signal per run.
+    // - Measured cycle count is "from shared trigger edge to selected done edge".
+    // Therefore this TB is good for quick relative latency checks, but not an isolated
+    // single-DUT latency benchmark unless only one DUT is active in the test.
     task7_ci_fp32_mul u_mul (
         .clk(clk), .reset(reset), .clk_en(clk_en), .start(start),
         .dataa(dataa), .datab(datab), .n(n), .done(done_mul), .result(result_mul)
@@ -67,6 +77,8 @@ module tb_task7_perf;
             @(posedge clk);
             start = 1'b0;
 
+            // Count cycles from start deassertion until selected done rises.
+            // Timeout guard avoids infinite wait if handshake is broken.
             cycles_out = 0;
             while (!done_sig && (cycles_out < 2000)) begin
                 @(posedge clk);

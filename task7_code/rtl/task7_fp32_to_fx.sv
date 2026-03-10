@@ -5,6 +5,13 @@ module task7_fp32_to_fx #(
     input  logic [31:0] fp_in,
     output logic signed [W-1:0] fx_out
 );
+    // IEEE-754 single -> signed fixed-point Q( W-FRAC ).FRAC converter.
+    //
+    // Behavior policy:
+    // - NaN / +/-Inf: saturate to fixed-point max/min.
+    // - Normal/subnormal finite values: convert with truncation-by-shift.
+    // - Out-of-range finite values: saturate.
+    // - Signed zero: maps to zero.
     localparam int MAG_W = W + 64;
     localparam logic signed [W-1:0] FX_MAX = {1'b0, {(W-1){1'b1}}};
     localparam logic signed [W-1:0] FX_MIN = {1'b1, {(W-1){1'b0}}};
@@ -51,15 +58,19 @@ module task7_fp32_to_fx #(
                 exp_unbiased = $signed({24'd0, exp_raw}) - 32'sd127;
             end
 
+            // Convert exponent from fp32 binary point (after 23 frac bits)
+            // to target fixed-point binary point (FRAC frac bits).
             shift_amt = exp_unbiased - 23 + FRAC;
 
             if (shift_amt >= 0) begin
+                // Left-shift for larger-magnitude results.
                 if (shift_amt >= (MAG_W - 24)) begin
                     mag_ext = fx_max_ext;
                 end else begin
                     mag_ext = $signed({{(MAG_W-24){1'b0}}, mantissa}) <<< shift_amt;
                 end
             end else begin
+                // Right-shift for smaller-magnitude results.
                 if ((-shift_amt) >= 24) begin
                     mag_ext = '0;
                 end else begin
@@ -69,6 +80,7 @@ module task7_fp32_to_fx #(
 
             signed_ext = sign ? -mag_ext : mag_ext;
 
+            // Final saturation to output width.
             if (signed_ext > fx_max_ext) begin
                 fx_out = FX_MAX;
             end else if (signed_ext < fx_min_ext) begin

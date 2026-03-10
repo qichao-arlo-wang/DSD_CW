@@ -11,6 +11,10 @@ module task7_fp32_mul_unit #(
     output logic        done,
     output logic [31:0] result
 );
+    // Detailed note:
+    // Multiplication is implemented via 24x24 mantissa product followed by
+    // explicit normalization/rounding, so latency is deterministic and easy
+    // to compose in the Task-7 FSM scheduler.
     localparam int CW = (LATENCY > 1) ? $clog2(LATENCY) : 1;
 
     logic [31:0] a_reg, b_reg;
@@ -37,6 +41,12 @@ module task7_fp32_mul_unit #(
         logic [23:0] sub_frac;
         logic round_sub, sticky_sub;
         begin
+            // 1) Classify operands and resolve IEEE-754 corner cases.
+            // Cases handled here:
+            // - NaN propagation
+            // - Inf * 0 -> NaN
+            // - Inf * finite -> Inf (with sign)
+            // - 0 * finite -> signed zero
             sign_a = lhs[31];
             sign_b = rhs[31];
             exp_a  = lhs[30:23];
@@ -59,6 +69,9 @@ module task7_fp32_mul_unit #(
             end else if (is_zero_a || is_zero_b) begin
                 fp32_mul = {sign_r, 31'd0};
             end else begin
+                // 2) Build explicit significands/exponents and perform 24x24 multiply.
+                //    - Normal numbers use hidden leading 1.
+                //    - Subnormals use hidden leading 0 and effective exp=1.
                 if (exp_a == 8'd0) begin
                     mant_a = {1'b0, frac_a};
                     exp_eff_a = 1;
@@ -82,7 +95,11 @@ module task7_fp32_mul_unit #(
                 if (prod_n == 48'd0) begin
                     fp32_mul = {sign_r, 31'd0};
                 end else begin
+                    // 3) Normalize product to 1.x form, then apply nearest-even rounding.
+                    // Product range before normalization is [0, 4), represented in 48 bits.
+                    // After normalization, we select a 24-bit mantissa candidate + GRS bits.
                     if (!prod_n[47]) begin
+                        // Left-normalize when leading bit is not in expected position.
                         for (k = 0; k < 47; k = k + 1) begin
                             if (!prod_n[46]) begin
                                 prod_n = prod_n << 1;
@@ -92,12 +109,14 @@ module task7_fp32_mul_unit #(
                     end
 
                     if (prod_n[47]) begin
+                        // Leading 1 at bit[47]: take bits [47:24] as 24-bit candidate.
                         mant24   = prod_n[47:24];
                         guard_b  = prod_n[23];
                         round_b  = prod_n[22];
                         sticky_b = |prod_n[21:0];
                         exp_r    = exp_r + 1;
                     end else begin
+                        // Leading 1 at bit[46]: take bits [46:23].
                         mant24   = prod_n[46:23];
                         guard_b  = prod_n[22];
                         round_b  = prod_n[21];
@@ -105,6 +124,7 @@ module task7_fp32_mul_unit #(
                     end
 
                     if (guard_b && (round_b || sticky_b || mant24[0])) begin
+                        // IEEE round-to-nearest-even.
                         mant25 = {1'b0, mant24} + 25'd1;
                         if (mant25[24]) begin
                             mant24 = 24'h800000;
@@ -115,9 +135,11 @@ module task7_fp32_mul_unit #(
                     end
 
                     if (exp_r >= 255) begin
+                        // Overflow after normalization/rounding.
                         fp32_mul = {sign_r, 8'hFF, 23'd0};
                     end else if (exp_r <= 0) begin
                         // Subnormal/underflow path.
+                        // Shift the normalized significand right to exponent -126 domain.
                         sh = 1 - exp_r;
                         if (sh > 24) begin
                             fp32_mul = {sign_r, 31'd0};
@@ -129,6 +151,7 @@ module task7_fp32_mul_unit #(
                             sticky_sub = 1'b0;
 
                             if (sh > 0) begin
+                                // Build round+sticky for the subnormal right-shift.
                                 round_sub = sub_sig[sh-1];
                                 for (j = 0; j < sh-1; j = j + 1) begin
                                     sticky_sub = sticky_sub | sub_sig[j];
@@ -143,10 +166,12 @@ module task7_fp32_mul_unit #(
                                 // Rounded to min normal.
                                 fp32_mul = {sign_r, 8'd1, 23'd0};
                             end else begin
+                                // Packed subnormal result.
                                 fp32_mul = {sign_r, 8'd0, sub_frac[22:0]};
                             end
                         end
                     end else begin
+                        // Packed normal result.
                         fp32_mul = {sign_r, exp_r[7:0], mant24[22:0]};
                     end
                 end
@@ -166,6 +191,7 @@ module task7_fp32_mul_unit #(
             done <= 1'b0;
 
             if (start && !busy) begin
+                // Inputs are sampled once; busy/done implement a fixed-latency handshake.
                 a_reg <= a;
                 b_reg <= b;
                 busy  <= 1'b1;

@@ -11,11 +11,17 @@ module task7_fp32_add_unit #(
     output logic        done,
     output logic [31:0] result
 );
+    // Detailed note:
+    // This is a compact behavioral fp32 adder for coursework integration/tests.
+    // It models key IEEE-754 semantics used by the task (specials + RNE rounding).
     localparam int CW = (LATENCY > 1) ? $clog2(LATENCY) : 1;
 
     logic [31:0] a_reg, b_reg;
     logic [CW-1:0] cnt;
 
+    // Right-shift with sticky-bit generation (used for exponent alignment).
+    // Example: when shifting out bits during mantissa alignment, any discarded
+    // non-zero bit must be remembered via sticky=1 for correct IEEE rounding.
     function automatic [26:0] shr_sticky_27(input logic [26:0] in_v, input integer sh);
         logic [26:0] out_v;
         integer j;
@@ -60,6 +66,8 @@ module task7_fp32_add_unit #(
         integer exp_big_eff, exp_sml_eff;
         logic zero_after_sub;
         begin
+            // 1) Classify operands and handle IEEE-754 special cases first.
+            // This keeps the arithmetic core focused on finite non-zero cases.
             sign_a = lhs[31];
             sign_b = rhs[31];
             exp_a  = lhs[30:23];
@@ -83,6 +91,10 @@ module task7_fp32_add_unit #(
             end else if (is_zero_a && is_zero_b) begin
                 fp32_add = 32'd0;
             end else begin
+                // 2) Decode mantissas and effective exponents.
+                //    - Normal:   value = 1.frac * 2^(exp-127)
+                //    - Subnormal:value = 0.frac * 2^(-126)
+                // For alignment math, subnormal is treated with effective exp = 1.
                 if (exp_a == 8'd0) begin
                     mant_a = {1'b0, frac_a};
                     exp_eff_a = 1;
@@ -99,6 +111,9 @@ module task7_fp32_add_unit #(
                     exp_eff_b = {24'd0, exp_b};
                 end
 
+                // 3) Align smaller operand to the larger exponent and combine magnitudes.
+                // We always subtract/add "small" from/to "big" to avoid negative
+                // intermediate magnitudes after opposite-sign operation.
                 // Select operand with larger magnitude as "big".
                 if ((exp_eff_a > exp_eff_b) || ((exp_eff_a == exp_eff_b) && (mant_a >= mant_b))) begin
                     exp_big_eff = exp_eff_a;
@@ -126,6 +141,7 @@ module task7_fp32_add_unit #(
                 zero_after_sub = 1'b0;
 
                 if (sign_big == sign_sml) begin
+                    // Same-sign: pure addition of aligned mantissas.
                     mr = {1'b0, ma} + {1'b0, mb};
                     sign_r = sign_big;
 
@@ -136,6 +152,7 @@ module task7_fp32_add_unit #(
                         exp_r = exp_r + 1;
                     end
                 end else begin
+                    // Opposite-sign: magnitude subtraction (big - small).
                     mr = {1'b0, ma} - {1'b0, mb};
                     sign_r = sign_big;
 
@@ -144,6 +161,8 @@ module task7_fp32_add_unit #(
                     end
 
                     if (!zero_after_sub) begin
+                        // Renormalize left after subtraction until hidden bit reaches bit[26].
+                        // Bound by 27 steps because mantissa+GRS width is 27.
                         for (i = 0; i < 27; i = i + 1) begin
                             if ((mr[26] == 1'b0) && (exp_r > 1)) begin
                                 mr = mr << 1;
@@ -153,6 +172,12 @@ module task7_fp32_add_unit #(
                     end
                 end
 
+                // 4) Normalize, round (nearest-even), then repack to fp32.
+                // Mantissa format at this point:
+                //   mr[26:3] = 24-bit significand candidate
+                //   mr[2]    = guard
+                //   mr[1]    = round
+                //   mr[0]    = sticky
                 if (zero_after_sub) begin
                     fp32_add = 32'd0;
                 end else begin
@@ -162,6 +187,9 @@ module task7_fp32_add_unit #(
                     mant24   = mr[26:3];
 
                     if (guard_b && (round_b || sticky_b || mant24[0])) begin
+                        // IEEE round-to-nearest-even:
+                        // - round up on >0.5 ulp
+                        // - on exactly 0.5 ulp, round to even LSB
                         mant25 = {1'b0, mant24} + 25'd1;
                         if (mant25[24]) begin
                             mant24 = 24'h800000;
@@ -172,14 +200,17 @@ module task7_fp32_add_unit #(
                     end
 
                     if (exp_r >= 255) begin
+                        // Overflow after rounding.
                         fp32_add = {sign_r, 8'hFF, 23'd0};
                     end else if (mant24 == 24'd0) begin
+                        // Exact cancellation to zero.
                         fp32_add = 32'd0;
                     end else if ((exp_r == 1) && (mant24[23] == 1'b0)) begin
                         // Effective exponent is -126 but significand has no hidden 1:
                         // this must be encoded as a subnormal number.
                         fp32_add = {sign_r, 8'd0, mant24[22:0]};
                     end else begin
+                        // Standard normalized fp32 packing.
                         fp32_add = {sign_r, exp_r[7:0], mant24[22:0]};
                     end
                 end
@@ -199,6 +230,7 @@ module task7_fp32_add_unit #(
             done <= 1'b0;
 
             if (start && !busy) begin
+                // Capture inputs at start; arithmetic result is produced after LATENCY cycles.
                 a_reg <= a;
                 b_reg <= b;
                 busy  <= 1'b1;
