@@ -32,7 +32,7 @@ module tb_task7_step2_accels;
     function automatic [31:0] int_to_fp32_bits(input int unsigned val);
         int msb;
         int unsigned rem;
-        int unsigned mant;
+        logic [22:0] mant;
         begin
             if (val == 0) begin
                 int_to_fp32_bits = 32'd0;
@@ -43,9 +43,9 @@ module tb_task7_step2_accels;
                 end
                 rem = val - (1 << msb);
                 if (msb >= 23) begin
-                    mant = rem >> (msb - 23);
+                    mant = 23'(rem >> (msb - 23));
                 end else begin
-                    mant = rem << (23 - msb);
+                    mant = 23'(rem << (23 - msb));
                 end
                 int_to_fp32_bits = {1'b0, (8'd127 + msb[7:0]), mant[22:0]};
             end
@@ -60,8 +60,8 @@ module tb_task7_step2_accels;
         real mant_r;
         begin
             sign_b = bits[31];
-            exp_raw = bits[30:23];
-            frac_raw = bits[22:0];
+            exp_raw = int'(bits[30:23]);
+            frac_raw = int'(bits[22:0]);
             sign_r = sign_b ? -1.0 : 1.0;
 
             if (exp_raw == 0 && frac_raw == 0) begin
@@ -76,9 +76,9 @@ module tb_task7_step2_accels;
     task automatic pulse_start;
         begin
             @(posedge clk);
-            start <= 1'b1;
+            start = 1'b1;
             @(posedge clk);
-            start <= 1'b0;
+            start = 1'b0;
         end
     endtask
 
@@ -93,11 +93,11 @@ module tb_task7_step2_accels;
         n = 0;
 
         repeat (5) @(posedge clk);
-        reset <= 0;
+        reset = 0;
 
-        dataa <= int_to_fp32_bits(8);
-        datab <= int_to_fp32_bits(3);
-        n <= 0;
+        dataa = int_to_fp32_bits(8);
+        datab = int_to_fp32_bits(3);
+        n = 0;
 
         pulse_start();
         wait(done_mul);
@@ -116,7 +116,7 @@ module tb_task7_step2_accels;
         rc = fp32_bits_to_real(result_cos);
         $display("step2 cos(8)   = %f", rc);
 
-        n <= 8'h1;
+        n = 8'h1;
         pulse_start();
         wait(done_addsub);
         ra = fp32_bits_to_real(result_addsub);

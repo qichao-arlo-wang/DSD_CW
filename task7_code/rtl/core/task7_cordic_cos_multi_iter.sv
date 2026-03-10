@@ -1,3 +1,15 @@
+//------------------------------------------------------------------------------
+// Purpose:
+//   Fixed-point multi-iteration-per-cycle CORDIC cosine engine.
+//
+// Role In Task 7:
+//   Serves as the cosine accelerator used by both Step-2 cosine-only CI and the
+//   final Step-3 `f(x)` CI module.
+//
+// Interface Notes:
+//   Rotation-mode CORDIC with start/busy/done handshake.
+//   Input/output use signed fixed-point format with configurable width/fraction.
+//------------------------------------------------------------------------------
 module task7_cordic_cos_multi_iter #(
     parameter int W = 28,
     parameter int FRAC = 22,

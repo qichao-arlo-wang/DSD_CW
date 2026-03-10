@@ -1,3 +1,15 @@
+//------------------------------------------------------------------------------
+// Purpose:
+//   Optional signed fixed-point saturating adder with handshake latency.
+//
+// Role In Task 7:
+//   Auxiliary module kept for alternative architectures/experiments; not used
+//   in the main Step-3 CI datapath that prioritizes fp32 arithmetic reuse.
+//
+// Interface Notes:
+//   Start/busy/done protocol with configurable latency, signed saturation on
+//   overflow, and parameterized operand width `W`.
+//------------------------------------------------------------------------------
 module task7_fx_add_unit #(
     parameter int W = 64,
     parameter int LATENCY = 1

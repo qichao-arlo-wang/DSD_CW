@@ -9,7 +9,7 @@ This folder implements Task 7 in three parts aligned with the coursework and mar
 - Use this script to justify the selected CORDIC configuration.
 
 2. **Task 7b (CORDIC architecture/implementation)**
-- `rtl/task7_cordic_cos_multi_iter.sv`
+- `rtl/core/task7_cordic_cos_multi_iter.sv`
 - Fixed-point CORDIC cosine core with **multiple iterations per cycle** (`ITER_PER_CYCLE > 1`), matching the high-mark architecture direction.
 - Default configuration:
   - `N_ITER = 18`
@@ -17,7 +17,7 @@ This folder implements Task 7 in three parts aligned with the coursework and mar
   - Q format for CORDIC: signed Q6.22 (`W=28, FRAC=22`)
 
 3. **Task 7c (single custom instruction with internal FSM)**
-- `rtl/task7_ci_f_single.sv`
+- `rtl/ci_step3/task7_ci_f_single.sv`
 - Computes
   - `f(x) = 0.5*x + x^3*cos((x-128)/128)`
 - Non-cos arithmetic path uses fp32 units; only `cos()` path uses fixed-point CORDIC.
@@ -30,15 +30,17 @@ This folder implements Task 7 in three parts aligned with the coursework and mar
 - FSM + register file schedule all operations internally (NIOS no longer orchestrates intermediate calls).
 
 ## RTL files
-- `rtl/task7_fp32_to_fx.sv`: IEEE-754 single -> fixed-point converter
-- `rtl/task7_fx_to_fp32.sv`: fixed-point -> IEEE-754 single converter
-- `rtl/task7_fp32_mul_unit.sv`: shared fp32 multiply accelerator with start/done
-- `rtl/task7_fp32_add_unit.sv`: shared fp32 add accelerator with start/done
-- `rtl/task7_cordic_cos_multi_iter.sv`: multi-iteration CORDIC cosine core
-- `rtl/task7_ci_cos_only.sv`: Step-2 standalone CORDIC custom instruction
-- `rtl/task7_ci_fp32_mul.sv`: Step-2 standalone fp32 multiplier custom instruction
-- `rtl/task7_ci_fp32_addsub.sv`: Step-2 standalone fp32 add/sub custom instruction (`n[0]` selects add/sub)
-- `rtl/task7_ci_f_single.sv`: final Step-3 single custom instruction for `f(x)`
+- `rtl/core/task7_fp32_to_fx.sv`: IEEE-754 single -> fixed-point converter
+- `rtl/core/task7_fx_to_fp32.sv`: fixed-point -> IEEE-754 single converter
+- `rtl/core/task7_fp32_mul_unit.sv`: shared fp32 multiply accelerator with start/done
+- `rtl/core/task7_fp32_add_unit.sv`: shared fp32 add accelerator with start/done
+- `rtl/core/task7_cordic_cos_multi_iter.sv`: multi-iteration CORDIC cosine core
+- `rtl/ci_step2/task7_ci_cos_only.sv`: Step-2 standalone CORDIC custom instruction
+- `rtl/ci_step2/task7_ci_fp32_mul.sv`: Step-2 standalone fp32 multiplier custom instruction
+- `rtl/ci_step2/task7_ci_fp32_addsub.sv`: Step-2 standalone fp32 add/sub custom instruction (`n[0]` selects add/sub)
+- `rtl/ci_step3/task7_ci_f_single.sv`: final Step-3 single custom instruction for `f(x)`
+- `rtl/optional_fx/task7_fx_add_unit.sv`: optional fixed-point saturating adder (not used in main CI path)
+- `rtl/optional_fx/task7_fx_mul_unit.sv`: optional fixed-point saturating multiplier (not used in main CI path)
 
 ## Testbenches
 - SystemVerilog:
@@ -70,7 +72,7 @@ make
 rm -rf obj_dir
 /opt/homebrew/bin/verilator -Wall -Wno-fatal -Wno-DECLFILENAME --binary -sv \
   --top-module tb_task7_cordic \
-  tb/tb_task7_cordic.sv rtl/task7_cordic_cos_multi_iter.sv
+  tb/tb_task7_cordic.sv rtl/core/task7_cordic_cos_multi_iter.sv
 ./obj_dir/Vtb_task7_cordic
 
 # Final single custom instruction TB
@@ -78,9 +80,9 @@ rm -rf obj_dir
 /opt/homebrew/bin/verilator -Wall -Wno-fatal -Wno-DECLFILENAME --binary -sv \
   --top-module tb_task7_ci_f \
   tb/tb_task7_ci_f.sv \
-  rtl/task7_fp32_to_fx.sv rtl/task7_fx_to_fp32.sv \
-  rtl/task7_fp32_mul_unit.sv rtl/task7_fp32_add_unit.sv \
-  rtl/task7_cordic_cos_multi_iter.sv rtl/task7_ci_f_single.sv
+  rtl/core/task7_fp32_to_fx.sv rtl/core/task7_fx_to_fp32.sv \
+  rtl/core/task7_fp32_mul_unit.sv rtl/core/task7_fp32_add_unit.sv \
+  rtl/core/task7_cordic_cos_multi_iter.sv rtl/ci_step3/task7_ci_f_single.sv
 ./obj_dir/Vtb_task7_ci_f
 
 # Step-2 three-accelerator TB
@@ -88,15 +90,15 @@ rm -rf obj_dir
 /opt/homebrew/bin/verilator -Wall -Wno-fatal -Wno-DECLFILENAME --binary -sv \
   --top-module tb_task7_step2_accels \
   tb/tb_task7_step2_accels.sv \
-  rtl/task7_fp32_to_fx.sv rtl/task7_fx_to_fp32.sv \
-  rtl/task7_cordic_cos_multi_iter.sv \
-  rtl/task7_fp32_mul_unit.sv rtl/task7_fp32_add_unit.sv \
-  rtl/task7_ci_fp32_mul.sv rtl/task7_ci_fp32_addsub.sv rtl/task7_ci_cos_only.sv
+  rtl/core/task7_fp32_to_fx.sv rtl/core/task7_fx_to_fp32.sv \
+  rtl/core/task7_cordic_cos_multi_iter.sv \
+  rtl/core/task7_fp32_mul_unit.sv rtl/core/task7_fp32_add_unit.sv \
+  rtl/ci_step2/task7_ci_fp32_mul.sv rtl/ci_step2/task7_ci_fp32_addsub.sv rtl/ci_step2/task7_ci_cos_only.sv
 ./obj_dir/Vtb_task7_step2_accels
 ```
 
 ## Notes for Quartus / Platform Designer integration
-- Add `task7_ci_f_single.sv` as the component top module.
+- Add `rtl/ci_step3/task7_ci_f_single.sv` as the component top module.
 - In the custom instruction template, use variable multicycle mode and map:
   - `dataa` as the float input `x`
   - `result` as float output `f(x)`
@@ -104,5 +106,5 @@ rm -rf obj_dir
 - Keep `datab` and `n` connected for interface compatibility (unused in this implementation).
 
 ## Important implementation note
-- The CORDIC constants in `task7_cordic_cos_multi_iter.sv` are precomputed for `FRAC = 22`.
+- The CORDIC constants in `rtl/core/task7_cordic_cos_multi_iter.sv` are precomputed for `FRAC = 22`.
 - If you change `FRAC`, regenerate the constants (or keep `FRAC=22`).

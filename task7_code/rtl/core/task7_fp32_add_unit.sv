@@ -1,3 +1,15 @@
+//------------------------------------------------------------------------------
+// Purpose:
+//   Shared fp32 add unit with deterministic handshake latency.
+//
+// Role In Task 7:
+//   Provides floating-point addition support to Step-2 add/sub CI and Step-3
+//   final `f(x)` CI scheduling logic.
+//
+// Interface Notes:
+//   Behavioral IEEE-754 single-precision adder model with start/busy/done
+//   protocol, suitable for integration and verification in this coursework.
+//------------------------------------------------------------------------------
 module task7_fp32_add_unit #(
     parameter int LATENCY = 1
 ) (

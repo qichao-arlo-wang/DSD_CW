@@ -1,3 +1,15 @@
+//------------------------------------------------------------------------------
+// Purpose:
+//   Signed fixed-point to IEEE-754 single-precision converter.
+//
+// Role In Task 7:
+//   Converts fixed-point outputs (for example CORDIC cosine results) back to
+//   fp32 format required by CI result ports and fp32 arithmetic units.
+//
+// Interface Notes:
+//   Combinational converter with normalization and rounding path, plus explicit
+//   overflow handling to +/-Inf for out-of-range magnitudes.
+//------------------------------------------------------------------------------
 module task7_fx_to_fp32 #(
     parameter int W = 64,
     parameter int FRAC = 34
@@ -14,7 +26,7 @@ module task7_fx_to_fp32 #(
     //   (subnormal output path is intentionally omitted for current Task-7 range)
     logic sign;
     logic [W-1:0] abs_val;
-    logic [W-1:0] shifted_abs;
+    logic [23:0] shifted_abs;
 
     integer msb_idx;
     integer exp_unbiased;
@@ -65,8 +77,8 @@ module task7_fx_to_fp32 #(
                 if (msb_idx >= 23) begin
                     // Shift right to obtain 1.xxx... mantissa window.
                     shift_amt  = msb_idx - 23;
-                    shifted_abs = abs_val >> shift_amt;
-                    mant24_ext = {1'b0, shifted_abs[23:0]};
+                    shifted_abs = 24'(abs_val >> shift_amt);
+                    mant24_ext = {1'b0, shifted_abs};
 
                     if (shift_amt > 0) begin
                         // Build round/sticky bits from discarded LSBs.

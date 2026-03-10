@@ -25,24 +25,24 @@ module tb_task7_ci_f;
 
     always #10 clk = ~clk; // 50 MHz
 
-    function automatic [31:0] int_to_fp32_bits(input int unsigned n);
+    function automatic [31:0] int_to_fp32_bits(input int unsigned val);
         int msb;
         int unsigned rem;
-        int unsigned mant;
+        logic [22:0] mant;
         begin
-            if (n == 0) begin
+            if (val == 0) begin
                 int_to_fp32_bits = 32'd0;
             end else begin
                 msb = 31;
-                while ((msb > 0) && (n[msb] == 1'b0)) begin
+                while ((msb > 0) && (val[msb] == 1'b0)) begin
                     msb = msb - 1;
                 end
 
-                rem = n - (1 << msb);
+                rem = val - (1 << msb);
                 if (msb >= 23) begin
-                    mant = rem >> (msb - 23);
+                    mant = 23'(rem >> (msb - 23));
                 end else begin
-                    mant = rem << (23 - msb);
+                    mant = 23'(rem << (23 - msb));
                 end
 
                 int_to_fp32_bits = {1'b0, (8'd127 + msb[7:0]), mant[22:0]};
@@ -58,8 +58,8 @@ module tb_task7_ci_f;
         real mant_r;
         begin
             sign_b = bits[31];
-            exp_raw = bits[30:23];
-            frac_raw = bits[22:0];
+            exp_raw = int'(bits[30:23]);
+            frac_raw = int'(bits[22:0]);
             sign_r = sign_b ? -1.0 : 1.0;
 
             if (exp_raw == 0 && frac_raw == 0) begin
@@ -94,13 +94,13 @@ module tb_task7_ci_f;
         begin
             x = x_int;
             @(posedge clk);
-            dataa <= int_to_fp32_bits(x_int);
-            datab <= 32'd0;
-            n     <= 8'd0;
-            start <= 1'b1;
+            dataa = int_to_fp32_bits(x_int);
+            datab = 32'd0;
+            n     = 8'd0;
+            start = 1'b1;
 
             @(posedge clk);
-            start <= 1'b0;
+            start = 1'b0;
 
             timeout = 0;
             while ((done !== 1'b1) && (timeout < 1000)) begin
@@ -138,7 +138,7 @@ module tb_task7_ci_f;
         n = '0;
 
         repeat(5) @(posedge clk);
-        reset <= 1'b0;
+        reset = 1'b0;
 
         call_ci_and_check(0,   2e-2, 2e-5);
         call_ci_and_check(32,  2e-2, 2e-5);

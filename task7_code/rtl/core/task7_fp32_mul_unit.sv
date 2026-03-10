@@ -1,3 +1,15 @@
+//------------------------------------------------------------------------------
+// Purpose:
+//   Shared fp32 multiply unit with deterministic handshake latency.
+//
+// Role In Task 7:
+//   Provides floating-point multiplication support to Step-2 multiplier CI and
+//   the Step-3 final `f(x)` CI datapath/FSM.
+//
+// Interface Notes:
+//   Behavioral IEEE-754 single-precision multiplier model with start/busy/done
+//   protocol and explicit normalization/rounding logic.
+//------------------------------------------------------------------------------
 module task7_fp32_mul_unit #(
     parameter int LATENCY = 2
 ) (
@@ -37,7 +49,6 @@ module task7_fp32_mul_unit #(
         logic is_inf_a, is_inf_b;
         logic is_nan_a, is_nan_b;
         logic [24:0] sub_sig;
-        logic [24:0] sub_shifted;
         logic [23:0] sub_frac;
         logic round_sub, sticky_sub;
         begin
@@ -145,8 +156,7 @@ module task7_fp32_mul_unit #(
                             fp32_mul = {sign_r, 31'd0};
                         end else begin
                             sub_sig = {1'b0, mant24};
-                            sub_shifted = sub_sig >> sh;
-                            sub_frac = sub_shifted[23:0];
+                            sub_frac = 24'(sub_sig >> sh);
                             round_sub = 1'b0;
                             sticky_sub = 1'b0;
 

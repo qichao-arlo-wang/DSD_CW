@@ -1,3 +1,15 @@
+//------------------------------------------------------------------------------
+// Purpose:
+//   IEEE-754 single-precision to signed fixed-point converter.
+//
+// Role In Task 7:
+//   Converts fp32 input values from CI interface into fixed-point values for
+//   the CORDIC cosine core and fixed-point internal operations.
+//
+// Interface Notes:
+//   Combinational converter with saturation handling for NaN/Inf/out-of-range
+//   cases, parameterized by output width `W` and fractional bits `FRAC`.
+//------------------------------------------------------------------------------
 module task7_fp32_to_fx #(
     parameter int W = 64,
     parameter int FRAC = 34

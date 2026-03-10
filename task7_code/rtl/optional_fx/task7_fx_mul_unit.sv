@@ -1,3 +1,15 @@
+//------------------------------------------------------------------------------
+// Purpose:
+//   Optional signed fixed-point saturating multiplier with handshake latency.
+//
+// Role In Task 7:
+//   Auxiliary module for fixed-point design-space exploration; not used in the
+//   main Step-3 CI datapath that uses shared fp32 multiply/add units.
+//
+// Interface Notes:
+//   Start/busy/done protocol with configurable latency, fixed-point rescaling
+//   by `FRAC`, and signed saturation on overflow.
+//------------------------------------------------------------------------------
 module task7_fx_mul_unit #(
     parameter int W = 64,
     parameter int FRAC = 34,

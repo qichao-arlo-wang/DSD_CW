@@ -1,3 +1,17 @@
+//------------------------------------------------------------------------------
+// Purpose:
+//   Final Step-3 single custom-instruction module for Task 7 function f(x).
+//
+// Role In Task 7:
+//   Implements the complete expression:
+//     f(x) = 0.5*x + x^3*cos((x - 128)/128)
+//   by coordinating one fp32 multiplier, one fp32 adder, and one CORDIC cosine
+//   core through an FSM with start/done handshaking.
+//
+// Interface Notes:
+//   `dataa` is the input x (fp32). `datab` and `n` are present for CI interface
+//   compatibility and are not used by this top-level function block.
+//------------------------------------------------------------------------------
 module task7_ci_f_single #(
     parameter int FX_W = 40,
     parameter int FX_FRAC = 22,
@@ -72,7 +86,7 @@ module task7_ci_f_single #(
         input logic signed [FX_W-1:0] x_in
     );
         logic signed [FX_W-1:0] angle_fx;
-        logic signed [FX_W-1:0] clamped;
+        logic signed [CORDIC_W-1:0] clamped;
         begin
             // Map problem-space input to CORDIC-space angle:
             // angle = (x - 128) / 128
@@ -82,14 +96,14 @@ module task7_ci_f_single #(
             // This avoids out-of-range behavior and keeps error model consistent
             // with the Task 7a Monte-Carlo assumptions.
             if (angle_fx > ONE_ANGLE) begin
-                clamped = ONE_ANGLE;
+                clamped = ONE_ANGLE[CORDIC_W-1:0];
             end else if (angle_fx < -ONE_ANGLE) begin
-                clamped = -ONE_ANGLE;
+                clamped = -$signed(ONE_ANGLE[CORDIC_W-1:0]);
             end else begin
-                clamped = angle_fx;
+                clamped = angle_fx[CORDIC_W-1:0];
             end
 
-            angle_to_cordic = clamped[CORDIC_W-1:0];
+            angle_to_cordic = clamped;
         end
     endfunction
 
@@ -232,7 +246,9 @@ module task7_ci_f_single #(
 
             case (state)
                 S_IDLE: begin
-                    if (start) begin
+                    // Busy guards are expected to be low in IDLE; keep explicit
+                    // check to avoid re-triggering while any sub-block is active.
+                    if (start && !cordic_busy && !mul_busy && !add_busy) begin
                         // Capture input and precompute half_x immediately.
                         x_fp_reg         <= dataa;
                         half_x_fp_reg    <= fp32_mul_half(dataa);

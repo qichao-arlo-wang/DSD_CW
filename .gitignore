@@ -134,6 +134,8 @@ __pycache__/
 .pycache_tmp/
 obj_dir/
 **/obj_dir/
+obj_dir*/
+**/obj_dir*/
 .vbuild/
 **/.vbuild/
 sim_build/

@@ -1,3 +1,15 @@
+//------------------------------------------------------------------------------
+// Purpose:
+//   Step-2 standalone custom-instruction module for cosine evaluation only.
+//
+// Role In Task 7:
+//   Implements cos() path as an independent CI block: fp32 input -> fixed-point
+//   angle mapping -> CORDIC cosine -> fp32 output.
+//
+// Interface Notes:
+//   Uses Nios II CI-style start/done handshake.
+//   `dataa` carries the input sample; `datab` and `n` are unused placeholders.
+//------------------------------------------------------------------------------
 module task7_ci_cos_only #(
     parameter int FX_W = 40,
     parameter int FX_FRAC = 22,
@@ -38,16 +50,16 @@ module task7_ci_cos_only #(
     function automatic logic signed [CORDIC_W-1:0] clamp_to_cordic(
         input logic signed [FX_W-1:0] in_val
     );
-        logic signed [FX_W-1:0] clamped;
+        logic signed [CORDIC_W-1:0] clamped;
         begin
             if (in_val > ONE_FX) begin
-                clamped = ONE_FX;
+                clamped = ONE_FX[CORDIC_W-1:0];
             end else if (in_val < -ONE_FX) begin
-                clamped = -ONE_FX;
+                clamped = -$signed(ONE_FX[CORDIC_W-1:0]);
             end else begin
-                clamped = in_val;
+                clamped = in_val[CORDIC_W-1:0];
             end
-            clamp_to_cordic = clamped[CORDIC_W-1:0];
+            clamp_to_cordic = clamped;
         end
     endfunction
 
@@ -97,7 +109,7 @@ module task7_ci_cos_only #(
 
             case (state)
                 S_IDLE: begin
-                    if (start) begin
+                    if (start && !cordic_busy) begin
                         cordic_angle <= clamp_to_cordic(x_fx_wire);
                         cordic_start <= 1'b1;
                         state        <= S_WAIT_CORDIC;
