@@ -3,9 +3,9 @@
 This folder implements Task 7 in three parts aligned with the coursework and marking scheme:
 
 1. **Task 7a (analysis)**
-- `analysis/task7a_cordic_mc.py`
+- `analysis/task7a_cordic_mc.m`
 - Monte-Carlo sweep of CORDIC iterations and fixed-point fractional bits.
-- Reports MSE and 95% CI upper bound against `float32(cos(x))`, for `x ~ U[-1,1]`.
+- Reports analytical `2^{-i}` estimate, MSE, and 95% CI upper bound against single-precision cosine, for `x ~ U[-1,1]`.
 - Use this script to justify the selected CORDIC configuration.
 
 2. **Task 7b (CORDIC architecture/implementation)**
@@ -55,8 +55,7 @@ This folder implements Task 7 in three parts aligned with the coursework and mar
 
 ### 7a Monte-Carlo analysis
 ```bash
-cd task7_code
-python3 analysis/task7a_cordic_mc.py --samples 50000 --seed 7
+/Applications/MATLAB_R2025b.app/bin/matlab -batch "cd('/Users/arlo/Projects/DSD_CW/task7_code/analysis'); task7a_cordic_mc('samples',50000,'seed',7,'iters',12:24,'fracs',20:34,'export_csv','/Users/arlo/Projects/DSD_CW/report3/Code/task7a_sweep_results.csv','figure_dir','/Users/arlo/Projects/DSD_CW/report3/Images','figure_prefix','t7a');"
 ```
 
 ### cocotb + Verilator regression

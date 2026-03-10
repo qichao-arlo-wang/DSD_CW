@@ -10,7 +10,7 @@ This folder contains a LaTeX skeleton for Coursework Report 3.
 ## Suggested data sources to fill TODO sections
 - Task 7 analysis and RTL notes:
   - `/Users/arlo/Projects/DSD_CW/task7_code/README.md`
-  - `/Users/arlo/Projects/DSD_CW/task7_code/analysis/task7a_cordic_mc.py`
+  - `/Users/arlo/Projects/DSD_CW/task7_code/analysis/task7a_cordic_mc.m`
   - `/Users/arlo/Projects/DSD_CW/task7_code/tb/`
 - Coursework and marking text:
   - `/Users/arlo/Projects/DSD_CW/tmp_DSD_coursework_DE1-SoC(1).txt`

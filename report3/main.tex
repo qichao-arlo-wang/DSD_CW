@@ -17,6 +17,9 @@
 % -- Formatting --
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0.4em}
+\setlength{\textfloatsep}{6pt plus 1pt minus 1pt}
+\setlength{\floatsep}{6pt plus 1pt minus 1pt}
+\setlength{\intextsep}{6pt plus 1pt minus 1pt}
 \titleformat{\section}{\normalfont\normalsize\bfseries}{\thesection}{0.6em}{}
 \titleformat{\subsection}{\normalfont\small\bfseries}{\thesubsection}{0.5em}{}
 \titleformat{\subsubsection}{\normalfont\small\itshape}{\thesubsubsection}{0.5em}{}
@@ -35,7 +38,7 @@
     {\LARGE \textbf{Digital System Design Report 3}} \\[0.4em]
     {\large Group 29} \\[0.3em]
     \begin{tabular}{rl}
-        \textbf{Authors:} & Michael Chenxu Li (mcl123), Qichao (Arlo) Wang (qw823)
+        \textbf{Authors:} & Qichao (Arlo) Wang (qw823)
     \end{tabular}
     \vspace{0.5em}
     \hrule
@@ -53,16 +56,6 @@ The target function is
 F(x)=\sum_i f(x_i),\quad f(x)=0.5x + x^3\cos\left(\frac{x-128}{128}\right)
 \]
 under single-precision floating-point representation.
-
-\textbf{What this report demonstrates:}
-\begin{itemize}
-    \item Task 7a: CORDIC error analysis and parameter selection using Monte Carlo.
-    \item Task 7b: CORDIC architecture choices, latency/timing/resource trade-offs.
-    \item Task 7c: Step-2 and Step-3 hardware architectures, integration and performance.
-    \item Task 8: Throughput-oriented final architecture and comparison to Task 7 best case.
-\end{itemize}
-
-\textbf{To fill:} add board/tool versions, exact build IDs, and measurement setup (timer source, number of runs, averaging method).
 
 % =============================================================
 \section{Experimental Methodology}
@@ -92,57 +85,106 @@ Metrics to report:
     \item Timing closure (worst slack at 50 MHz).
 \end{itemize}
 
-\subsection{Reference Models}
-\textbf{To fill:} MATLAB/Python reference equations, random seeds, Monte Carlo sample count, confidence interval method.
-
 % =============================================================
 \section{Task 7a: CORDIC Analysis (10\%)}
 % =============================================================
 
-\subsection{Design Space Exploration}
-Explain how CORDIC iterations and fixed-point wordlength were swept.
-State explicitly that $x \sim U[-1,1]$ (single precision) and that the target is
-MSE $< 2.4\\times 10^{-11}$ with 95\% confidence.
+\subsection{Reference Model and Statistical Method}
+Task 7a uses a MATLAB Monte Carlo model with:
+\begin{itemize}
+    \item random input $\theta \sim U[-1,1]$, quantised to \texttt{single};
+    \item reference output $y_{ref}=\cos(\theta)$ under MATLAB single precision;
+    \item CORDIC estimate $y_{cordic}$ using fixed-point internal arithmetic;
+    \item error sample $e_k=(y_{cordic,k}-y_{ref,k})^2$;
+    \item MSE estimate $\hat{\mu}_e=\frac{1}{N}\sum_{k=1}^{N}e_k$ and 95\% CI
+    $\hat{\mu}_e \pm 1.96\cdot s_e/\sqrt{N}$.
+\end{itemize}
+For all reported Task 7a results, we used $N=50{,}000$ samples and seed $=7$.
 
-\begin{table}[H]
+\subsection{Design Space Exploration}
+We swept both CORDIC parameters required by the specification:
+\begin{itemize}
+    \item iterations: all integers $N_{iter}\in\{12,13,\dots,24\}$;
+    \item fixed-point precision: all integer FRAC values from 20 to 34.
+\end{itemize}
+The total fixed-point width is set as:
+\[
+W = \mathrm{FRAC} + 2.
+\]
+The +2 integer/sign bits cover the CORDIC dynamic range for $\theta\in[-1,1]$ and $\cos(\theta)\in[-1,1]$.
+The acceptance criterion is the coursework requirement:
+\[
+\text{CI}_{95,\text{upper}}(\text{MSE}) < 2.4\times10^{-11}.
+\]
+
+\begin{table}[t]
 \centering
-\caption{Task 7a parameter sweep summary (placeholder).}
+\caption{Task 7a sweep excerpt around the pass boundary.}
 \label{tab:t7a_sweep}
-\small
-\begin{tabular}{rrrrrr}
+\scriptsize
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{rrrrrrr}
 \toprule
-N\_iter & W & FRAC & $2^{-i}$ est. & MSE & 95\% CI upper \\
+N\_iter & W & FRAC & $2^{-i}$ est. & MSE & 95\% CI upper & Pass \\
 \midrule
-18 & 28 & 22 & TODO & TODO & TODO \\
-18 & 26 & 20 & TODO & TODO & TODO \\
-20 & 28 & 22 & TODO & TODO & TODO \\
+16 & 22 & 20 & 1.526e-05 & 8.817e-11 & 8.926e-11 & No \\
+17 & 22 & 20 & 7.629e-06 & 2.575e-11 & 2.607e-11 & No \\
+18 & 22 & 20 & 3.815e-06 & 1.000e-11 & 1.013e-11 & Yes \\
+16 & 23 & 21 & 1.526e-05 & 8.527e-11 & 8.633e-11 & No \\
+17 & 23 & 21 & 7.629e-06 & 2.254e-11 & 2.282e-11 & Yes \\
+18 & 23 & 21 & 3.815e-06 & 6.555e-12 & 6.640e-12 & Yes \\
+16 & 24 & 22 & 1.526e-05 & 8.444e-11 & 8.548e-11 & No \\
+17 & 24 & 22 & 7.629e-06 & 2.163e-11 & 2.190e-11 & Yes \\
+18 & 24 & 22 & 3.815e-06 & 5.599e-12 & 5.668e-12 & Yes \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 \subsection{Analytical Error Estimate ($2^{-i}$)}
-\textbf{To fill:}
-\begin{itemize}
-    \item Derive/quote the iteration-based error estimate using $2^{-i}$.
-    \item Compare this estimate against simulation observations.
-    \item Explain why this estimate is useful for narrowing the search space.
-\end{itemize}
+For rotation-mode CORDIC, the residual angle after $i$ iterations is bounded by a term proportional to $2^{-i}$.
+Using $|\Delta\cos(\theta)|\approx |\sin(\theta)\Delta\theta|\le|\Delta\theta|$, the absolute cosine error also follows an $O(2^{-i})$ trend; therefore squared error follows approximately $O(2^{-2i})$.
+This estimate is not used as the final proof, but it is effective to prune the search space before Monte Carlo.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\linewidth]{Images/t7a_error_estimate_vs_mc.png}
+\caption{Analytical $2^{-i}$ trend versus observed Monte Carlo error scale (shown in $\log_{10}$ domain for readability).}
+\label{fig:t7a_2mi}
+\end{figure}
 
 \subsection{Selected Configuration and Justification}
-\textbf{To fill:}
+After including odd values, the first passing point in lexicographic order
+(minimum iterations, then minimum FRAC) is:
+\[
+(N_{iter},W,\text{FRAC})=(17,23,21).
+\]
+Measured statistics for this minimum-passing point are:
 \begin{itemize}
-    \item Final selected $(N_{iter}, W, FRAC)$.
-    \item Why this point is the best trade-off under the error constraint.
-    \item Evidence that CI upper bound satisfies requirement.
+    \item MSE $=2.254\times10^{-11}$,
+    \item 95\% CI $=[2.226, 2.282]\times10^{-11}$,
+    \item CI upper bound margin to spec: $2.4\times10^{-11}/2.282\times10^{-11}\approx 1.05\times$.
 \end{itemize}
+For implementation in Task 7b/7c we keep $(18,24,22)$ as a conservative choice:
+with \texttt{ITER\_PER\_CYCLE}=3, both 17 and 18 iterations map to the same CORDIC cycle count (6 cycles), while $(18,24,22)$ has significantly larger numerical margin.
 
 \subsection{Impact on Accuracy and Latency}
-Discuss how increasing iterations and bit-width affects:
+Observed impact from the full sweep:
 \begin{itemize}
-    \item CORDIC cosine error,
-    \item CORDIC cycle count,
-    \item area footprint.
+    \item For FRAC=20, the threshold is crossed at $N_{iter}=18$ (17 fails, 18 passes).
+    \item For FRAC$\ge$21, $N_{iter}=17$ already passes.
+    \item Increasing FRAC beyond the threshold region keeps reducing error, but with diminishing practical benefit.
+    \item Latency grows with iteration count (for fixed iterations-per-cycle), while larger FRAC increases datapath cost; therefore minimum-passing and implementation-conservative points are both reported.
 \end{itemize}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\linewidth]{Images/t7a_ci_upper_vs_iter.png}
+\caption{95\% CI upper bound of MSE versus iterations for each fixed-point precision (top: full sweep; bottom: zoom for $N_{iter}\ge16$, both on log scale).}
+\label{fig:t7a_ci}
+\end{figure}
+
+\FloatBarrier
 
 % =============================================================
 \section{Task 7b: CORDIC Architecture and Implementation (10\%)}
@@ -157,7 +199,7 @@ Discuss how increasing iterations and bit-width affects:
     \item Comparison of single-iteration/cycle vs multi-iteration/cycle options.
 \end{itemize}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \fbox{\parbox[c][28mm][c]{0.95\linewidth}{\centering Placeholder: CORDIC datapath/FSM diagram}}
 \caption{CORDIC architecture used in Task 7b.}
@@ -181,7 +223,7 @@ Discuss how increasing iterations and bit-width affects:
 Describe the intermediate architecture with separate accelerators:
 FP\_MUL, FP\_ADD/SUB, and COS.
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Step-2 per-accelerator latency (placeholder).}
 \label{tab:t7c_step2_latency}
@@ -197,7 +239,7 @@ COS (CORDIC) & TODO & TODO \\
 \end{tabular}
 \end{table}
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Step-2 whole-function timing under Nios scheduling (placeholder).}
 \label{tab:t7c_step2_whole}
@@ -216,7 +258,7 @@ C3 & TODO & TODO & TODO \\
 \subsection{Step 3: Final Single-CI Block}
 Describe integrated FSM + register file architecture that computes one $f(x)$ call.
 
-\begin{figure}[H]
+\begin{figure}[t]
 \centering
 \fbox{\parbox[c][28mm][c]{0.95\linewidth}{\centering Placeholder: final Task 7c block diagram}}
 \caption{Task 7c final architecture (single custom instruction for $f(x)$).}
@@ -233,7 +275,7 @@ Describe integrated FSM + register file architecture that computes one $f(x)$ ca
 \end{itemize}
 
 \subsection{Performance, Resource, and Error Results}
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Task 7c summary across C1/C2/C3 (placeholder).}
 \label{tab:t7c_summary}
@@ -282,7 +324,7 @@ Discuss discrepancy between isolated block latency and integrated Nios system la
 \end{itemize}
 
 \subsection{Interface Options vs Marking Levels}
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Task-8 interface option mapping (placeholder).}
 \label{tab:t8_interface_levels}
@@ -301,7 +343,7 @@ L5 & Pipelined: accepts new input before previous inner-function completion (TOD
 \end{table}
 
 \subsection{Final Task-8 Datapath and Scheduling}
-\begin{figure}[H]
+\begin{figure}[t]
 \centering
 \fbox{\parbox[c][28mm][c]{0.95\linewidth}{\centering Placeholder: Task 8 datapath and control}}
 \caption{Task 8 architecture and pipeline schedule.}
@@ -309,7 +351,7 @@ L5 & Pipelined: accepts new input before previous inner-function completion (TOD
 \end{figure}
 
 \subsection{Task 8 Results}
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Task 8 performance/resources/error (placeholder).}
 \label{tab:t8_results}
@@ -338,7 +380,7 @@ Error vs double reference & TODO & TODO & TODO \\
 % =============================================================
 
 \subsection{Performance vs Resource Plot}
-\begin{figure}[H]
+\begin{figure}[t]
 \centering
 \fbox{\parbox[c][28mm][c]{0.95\linewidth}{\centering Placeholder: performance vs resources}}
 \caption{Performance-resource trade-off from baseline to Task 8 final design.}

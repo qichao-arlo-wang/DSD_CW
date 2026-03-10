@@ -131,6 +131,7 @@ Release/
 **/.pycache/
 __pycache__/
 **/__pycache__/
+.pycache_tmp/
 obj_dir/
 **/obj_dir/
 .vbuild/
@@ -139,6 +140,7 @@ sim_build/
 **/sim_build/
 results.xml
 **/results.xml
+task7_code/analysis/mat_out.txt
 
 ###############################################################################
 # Local extracted text scratch files
