@@ -47,7 +47,7 @@ module task7_fp32_add_unit #(
             end else begin
                 out_v = in_v >> sh;
                 sticky_acc = 1'b0;
-                for (j = 0; j < sh; j = j + 1) begin
+                for (j = 0; (j < sh) && (j < 27); j = j + 1) begin
                     sticky_acc = sticky_acc | in_v[j];
                 end
                 out_v[0] = out_v[0] | sticky_acc;
@@ -263,3 +263,4 @@ module task7_fp32_add_unit #(
         end
     end
 endmodule
+

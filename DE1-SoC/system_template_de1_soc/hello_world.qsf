@@ -105,9 +105,24 @@ set_location_assignment PIN_AK12 -to oDRAM_DQM[1]
 set_location_assignment PIN_AB13 -to oDRAM_DQM[0]
 
 set_global_assignment -name CYCLONEII_RESERVE_NCEO_AFTER_CONFIGURATION "USE AS REGULAR IO"
+set_global_assignment -name SEARCH_PATH "c:/users/arlow/downloads/dsd_cw/tmp"
+set_global_assignment -name SEARCH_PATH "c:/users/arlow/downloads/dsd_cw_material_students(1)/dsd_cw_material_students/de1-soc/system_template_de1_soc"
+set_global_assignment -name SYSTEMVERILOG_FILE ../task7_code/rtl/optional_fx/task7_fx_mul_unit.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../task7_code/rtl/optional_fx/task7_fx_add_unit.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../task7_code/rtl/ci_step3/task7_ci_f_single.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../task7_code/rtl/ci_step2/task7_ci_fp32_mul.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../task7_code/rtl/ci_step2/task7_ci_fp32_addsub.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../task7_code/rtl/ci_step2/task7_ci_cos_only.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../task7_code/rtl/core/task7_fx_to_fp32.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../task7_code/rtl/core/task7_fp32_to_fx.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../task7_code/rtl/core/task7_fp32_mul_unit.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../task7_code/rtl/core/task7_fp32_add_unit.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../task7_code/rtl/core/task7_cordic_cos_multi_iter.sv
 set_global_assignment -name QSYS_FILE first_nios2_system.qsys
 set_global_assignment -name SDC_FILE hw_dev_tutorial.sdc
 set_global_assignment -name BDF_FILE hello_world.bdf
-set_global_assignment -name SEARCH_PATH "c:/users/arlow/downloads/dsd_cw/tmp"
-set_global_assignment -name SEARCH_PATH "c:/users/arlow/downloads/dsd_cw_material_students(1)/dsd_cw_material_students/de1-soc/system_template_de1_soc"
+set_global_assignment -name TIMING_ANALYZER_MULTICORNER_ANALYSIS ON
+set_global_assignment -name SMART_RECOMPILE ON
+set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
+set_global_assignment -name OPTIMIZATION_MODE "AGGRESSIVE PERFORMANCE"
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

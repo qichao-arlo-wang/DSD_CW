@@ -163,7 +163,7 @@ module task7_fp32_mul_unit #(
                             if (sh > 0) begin
                                 // Build round+sticky for the subnormal right-shift.
                                 round_sub = sub_sig[sh-1];
-                                for (j = 0; j < sh-1; j = j + 1) begin
+                                for (j = 0; (j < sh-1) && (j < 25); j = j + 1) begin
                                     sticky_sub = sticky_sub | sub_sig[j];
                                 end
                             end
@@ -222,3 +222,4 @@ module task7_fp32_mul_unit #(
         end
     end
 endmodule
+

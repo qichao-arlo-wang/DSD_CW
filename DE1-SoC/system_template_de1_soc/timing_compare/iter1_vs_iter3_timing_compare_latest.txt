@@ -1,0 +1,23 @@
+Timing Compare: iter_per_cycle=1 vs iter_per_cycle=3 (Setup Summary)
+Baseline CSV: C:\Users\arlow\Downloads\DSD_CW\DE1-SoC\system_template_de1_soc\timing_compare\iter_per_cycle_1_setup_snapshot_latest.csv
+Current report: C:\Users\arlow\Downloads\DSD_CW\DE1-SoC\system_template_de1_soc\hello_world.sta.rpt
+Current report last write: 2026-03-11 00:05:01
+Generated at: 2026-03-11 00:07:57
+
+[Fast 1100mV 0C Model Setup Summary]
+sopc_clk               Slack:   7.604 ->   7.369 (delta  -0.235)   TNS:    0.000 ->    0.000 (delta    0.000)
+altera_reserved_tck    Slack:  25.535 ->  25.445 (delta  -0.090)   TNS:    0.000 ->    0.000 (delta    0.000)
+
+[Fast 1100mV 85C Model Setup Summary]
+sopc_clk               Slack:   7.441 ->   7.171 (delta  -0.270)   TNS:    0.000 ->    0.000 (delta    0.000)
+altera_reserved_tck    Slack:  25.357 ->  25.133 (delta  -0.224)   TNS:    0.000 ->    0.000 (delta    0.000)
+
+[Slow 1100mV 0C Model Setup Summary]
+sopc_clk               Slack:  -0.513 ->   0.442 (delta   0.955)   TNS:   -8.934 ->    0.000 (delta    8.934)
+altera_reserved_tck    Slack:  23.440 ->  23.416 (delta  -0.024)   TNS:    0.000 ->    0.000 (delta    0.000)
+
+[Slow 1100mV 85C Model Setup Summary]
+sopc_clk               Slack:  -0.313 ->   0.563 (delta   0.876)   TNS:   -3.835 ->    0.000 (delta    3.835)
+altera_reserved_tck    Slack:  23.300 ->  23.033 (delta  -0.267)   TNS:    0.000 ->    0.000 (delta    0.000)
+
+

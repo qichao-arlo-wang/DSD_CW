@@ -1,0 +1,22 @@
+Timing Setup Snapshot CLEAN (iter_per_cycle=1)
+Source report: C:\Users\arlow\Downloads\DSD_CW\DE1-SoC\system_template_de1_soc\hello_world.sta.rpt
+Report last write: 2026-03-10 23:40:32
+Extracted at: 2026-03-10 23:54:18
+
+[Fast 1100mV 0C Model Setup Summary]
+sopc_clk               Slack=  7.604 ns   TNS=   0.000 ns
+altera_reserved_tck    Slack= 25.535 ns   TNS=   0.000 ns
+
+[Fast 1100mV 85C Model Setup Summary]
+sopc_clk               Slack=  7.441 ns   TNS=   0.000 ns
+altera_reserved_tck    Slack= 25.357 ns   TNS=   0.000 ns
+
+[Slow 1100mV 0C Model Setup Summary]
+sopc_clk               Slack= -0.513 ns   TNS=  -8.934 ns
+altera_reserved_tck    Slack= 23.440 ns   TNS=   0.000 ns
+
+[Slow 1100mV 85C Model Setup Summary]
+sopc_clk               Slack= -0.313 ns   TNS=  -3.835 ns
+altera_reserved_tck    Slack= 23.300 ns   TNS=   0.000 ns
+
+

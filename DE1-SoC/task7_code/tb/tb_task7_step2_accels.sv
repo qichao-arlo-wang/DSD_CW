@@ -7,24 +7,24 @@ module tb_task7_step2_accels;
     logic start;
     logic [31:0] dataa;
     logic [31:0] datab;
-    logic [7:0] n;
+    logic       n_addsub;
 
     logic done_mul, done_addsub, done_cos;
     logic [31:0] result_mul, result_addsub, result_cos;
 
     task7_ci_fp32_mul u_mul (
         .clk(clk), .reset(reset), .clk_en(clk_en), .start(start),
-        .dataa(dataa), .datab(datab), .n(n), .done(done_mul), .result(result_mul)
+        .dataa(dataa), .datab(datab), .done(done_mul), .result(result_mul)
     );
 
     task7_ci_fp32_addsub u_addsub (
         .clk(clk), .reset(reset), .clk_en(clk_en), .start(start),
-        .dataa(dataa), .datab(datab), .n(n), .done(done_addsub), .result(result_addsub)
+        .dataa(dataa), .datab(datab), .n(n_addsub), .done(done_addsub), .result(result_addsub)
     );
 
     task7_ci_cos_only u_cos (
         .clk(clk), .reset(reset), .clk_en(clk_en), .start(start),
-        .dataa(dataa), .datab(datab), .n(n), .done(done_cos), .result(result_cos)
+        .dataa(dataa), .datab(datab), .done(done_cos), .result(result_cos)
     );
 
     always #10 clk = ~clk;
@@ -90,14 +90,14 @@ module tb_task7_step2_accels;
         start = 0;
         dataa = 0;
         datab = 0;
-        n = 0;
+        n_addsub = 0;
 
         repeat (5) @(posedge clk);
         reset = 0;
 
         dataa = int_to_fp32_bits(8);
         datab = int_to_fp32_bits(3);
-        n = 0;
+        n_addsub = 0;
 
         pulse_start();
         wait(done_mul);
@@ -116,7 +116,7 @@ module tb_task7_step2_accels;
         rc = fp32_bits_to_real(result_cos);
         $display("step2 cos(8)   = %f", rc);
 
-        n = 8'h1;
+        n_addsub = 1'b1;
         pulse_start();
         wait(done_addsub);
         ra = fp32_bits_to_real(result_addsub);
@@ -127,3 +127,5 @@ module tb_task7_step2_accels;
         $finish;
     end
 endmodule
+
+

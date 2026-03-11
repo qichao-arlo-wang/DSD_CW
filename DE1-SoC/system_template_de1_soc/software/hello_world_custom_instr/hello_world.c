@@ -6,9 +6,6 @@
 
 #include "sys/alt_alarm.h"
 
-#if defined(ALT_TIMESTAMP_CLK) && (ALT_TIMESTAMP_CLK >= 0)
-#include "sys/alt_timestamp.h"
-#endif
 
 /*
  * Task 7b/7c software driver.
@@ -22,7 +19,9 @@
 
 /* ----- Step-2: fp32 mul CI ----- */
 #ifndef CI_STEP2_MUL
-#if defined(ALT_CI_TASK7_CI_FP32_MUL_0)
+#if defined(ALT_CI_TASK7_FP_MUL_0)
+#define CI_STEP2_MUL(a_bits, b_bits) ALT_CI_TASK7_FP_MUL_0((a_bits), (b_bits))
+#elif defined(ALT_CI_TASK7_CI_FP32_MUL_0)
 #define CI_STEP2_MUL(a_bits, b_bits) ALT_CI_TASK7_CI_FP32_MUL_0((a_bits), (b_bits))
 #elif defined(ALT_CI_FP32_MUL_0)
 #define CI_STEP2_MUL(a_bits, b_bits) ALT_CI_FP32_MUL_0((a_bits), (b_bits))
@@ -30,10 +29,11 @@
 #define CI_STEP2_MUL(a_bits, b_bits) ALT_CI_MUL_0((a_bits), (b_bits))
 #endif
 #endif
-
 /* ----- Step-2: fp32 add/sub CI (configured as add in this SW) ----- */
 #ifndef CI_STEP2_ADD
-#if defined(ALT_CI_TASK7_CI_FP32_ADDSUB_0)
+#if defined(ALT_CI_TASK7_FP_ADD_SUB_0)
+#define CI_STEP2_ADD(a_bits, b_bits) ALT_CI_TASK7_FP_ADD_SUB_0(0, (a_bits), (b_bits))
+#elif defined(ALT_CI_TASK7_CI_FP32_ADDSUB_0)
 #define CI_STEP2_ADD(a_bits, b_bits) ALT_CI_TASK7_CI_FP32_ADDSUB_0((a_bits), (b_bits))
 #elif defined(ALT_CI_FP32_ADDSUB_0)
 #define CI_STEP2_ADD(a_bits, b_bits) ALT_CI_FP32_ADDSUB_0((a_bits), (b_bits))
@@ -41,7 +41,6 @@
 #define CI_STEP2_ADD(a_bits, b_bits) ALT_CI_FP32_ADD_0((a_bits), (b_bits))
 #endif
 #endif
-
 /* ----- Step-2: cos CI ----- */
 #ifndef CI_STEP2_COS
 #if defined(ALT_CI_TASK7_CI_COS_ONLY_0)
@@ -52,6 +51,9 @@
 #endif
 
 /* ----- Step-3: single f(x) CI ----- */
+static inline uint32_t f32_to_u32(float x);
+static inline float u32_to_f32(uint32_t x);
+
 #ifndef CI_STEP3_F
 #if defined(ALT_CI_TASK7_CI_F_SINGLE_0)
 #define CI_STEP3_F(a_bits, b_bits) ALT_CI_TASK7_CI_F_SINGLE_0((a_bits), (b_bits))
@@ -60,10 +62,22 @@
 #endif
 #endif
 
-#if !defined(CI_STEP2_MUL) || !defined(CI_STEP2_ADD) || !defined(CI_STEP2_COS) || !defined(CI_STEP3_F)
-#error "Missing CI mapping. Define CI_STEP2_MUL/CI_STEP2_ADD/CI_STEP2_COS/CI_STEP3_F to BSP macros in this file."
+#if !defined(CI_STEP2_MUL) || !defined(CI_STEP2_ADD) || !defined(CI_STEP2_COS)
+#error "Missing CI mapping. Define CI_STEP2_MUL/CI_STEP2_ADD/CI_STEP2_COS to BSP macros in this file."
 #endif
 
+#ifndef CI_STEP3_F
+#define CI_STEP3_F_IS_SW_FALLBACK 1
+static inline uint32_t ci_step3_f_sw_fallback(uint32_t a_bits) {
+    const float x = u32_to_f32(a_bits);
+    const float t = (x - 128.0f) * (1.0f / 128.0f);
+    const float fx = 0.5f * x + x * x * x * cosf(t);
+    return f32_to_u32(fx);
+}
+#define CI_STEP3_F(a_bits, b_bits) ci_step3_f_sw_fallback((a_bits))
+#else
+#define CI_STEP3_F_IS_SW_FALLBACK 0
+#endif
 typedef struct {
     const char *name;
     int denom;
@@ -103,27 +117,14 @@ static inline float u32_to_f32(uint32_t x) {
 static uint64_t g_tick_hz = 0;
 
 static uint64_t ticks_now(void) {
-#if defined(ALT_TIMESTAMP_CLK) && (ALT_TIMESTAMP_CLK >= 0)
-    return (uint64_t)alt_timestamp();
-#else
     return (uint64_t)alt_nticks();
-#endif
 }
 
 static uint64_t ticks_hz(void) {
-#if defined(ALT_TIMESTAMP_CLK) && (ALT_TIMESTAMP_CLK >= 0)
-    return (uint64_t)alt_timestamp_freq();
-#else
     return (uint64_t)alt_ticks_per_second();
-#endif
 }
 
 static int timer_init(void) {
-#if defined(ALT_TIMESTAMP_CLK) && (ALT_TIMESTAMP_CLK >= 0)
-    if (alt_timestamp_start() < 0) {
-        return -1;
-    }
-#endif
     g_tick_hz = ticks_hz();
     return (g_tick_hz == 0) ? -1 : 0;
 }
@@ -297,3 +298,8 @@ int main(void) {
     printf("Task7b/7c software run finished.\n");
     return 0;
 }
+
+
+
+
+

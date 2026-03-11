@@ -38,29 +38,39 @@ module task7_fx_to_fp32 #(
     logic round_bit;
     logic sticky_bits;
 
-    integer i;
+    function automatic logic [23:0] low24(input logic [W-1:0] v);
+        logic [23:0] tmp;
+        begin
+            tmp = '0;
+            for (int j = 0; j < 24; j = j + 1) begin
+                if (j < W) begin
+                    tmp[j] = v[j];
+                end
+            end
+            low24 = tmp;
+        end
+    endfunction
 
     always_comb begin
-        sign        = fx_in[W-1];
-        abs_val     = sign ? $unsigned(-fx_in) : $unsigned(fx_in);
-        shifted_abs = '0;
-        msb_idx     = 0;
+        // Defaults keep the block purely combinational.
+        fp_out       = 32'd0;
+        sign         = fx_in[W-1];
+        abs_val      = sign ? $unsigned(-fx_in) : $unsigned(fx_in);
+        shifted_abs  = '0;
+        msb_idx      = 0;
         exp_unbiased = 0;
-        exp_raw     = 0;
-        shift_amt   = 0;
-        mant24_ext  = '0;
-        mantissa    = '0;
-        round_bit   = 1'b0;
-        sticky_bits = 1'b0;
+        exp_raw      = 0;
+        shift_amt    = 0;
+        mant24_ext   = '0;
+        mantissa     = '0;
+        round_bit    = 1'b0;
+        sticky_bits  = 1'b0;
 
-        if (fx_in == '0) begin
-            fp_out = 32'd0;
-        end else begin
-            // Locate the highest set bit of |fx_in|.
-            for (i = W-1; i >= 0; i = i - 1) begin
-                if (abs_val[i]) begin
-                    msb_idx = i;
-                    break;
+        if (fx_in != '0) begin
+            // Locate the highest set bit of |fx_in| without break statements.
+            for (int bit_idx = 0; bit_idx < W; bit_idx = bit_idx + 1) begin
+                if (abs_val[bit_idx]) begin
+                    msb_idx = bit_idx;
                 end
             end
 
@@ -76,16 +86,23 @@ module task7_fx_to_fp32 #(
             end else begin
                 if (msb_idx >= 23) begin
                     // Shift right to obtain 1.xxx... mantissa window.
-                    shift_amt  = msb_idx - 23;
-                    shifted_abs = 24'(abs_val >> shift_amt);
+                    shift_amt = msb_idx - 23;
+                    shifted_abs = 24'($unsigned(abs_val) >> shift_amt);
                     mant24_ext = {1'b0, shifted_abs};
 
                     if (shift_amt > 0) begin
-                        // Build round/sticky bits from discarded LSBs.
-                        round_bit = abs_val[shift_amt-1];
+                        // Guard variable index access for synthesis tools.
+                        if ((shift_amt - 1) < W) begin
+                            round_bit = abs_val[shift_amt-1];
+                        end else begin
+                            round_bit = 1'b0;
+                        end
+
                         sticky_bits = 1'b0;
-                        for (i = 0; i < shift_amt-1; i = i + 1) begin
-                            sticky_bits = sticky_bits | abs_val[i];
+                        for (int sticky_idx = 0; sticky_idx < W; sticky_idx = sticky_idx + 1) begin
+                            if (sticky_idx < (shift_amt - 1)) begin
+                                sticky_bits = sticky_bits | abs_val[sticky_idx];
+                            end
                         end
 
                         // Round to nearest even.
@@ -102,7 +119,7 @@ module task7_fx_to_fp32 #(
                 end else begin
                     // Shift left when magnitude fits fully below mantissa MSB.
                     shift_amt  = 23 - msb_idx;
-                    mant24_ext = {1'b0, abs_val[23:0]} << shift_amt;
+                    mant24_ext = {1'b0, low24(abs_val)} << shift_amt;
                 end
 
                 if (exp_raw >= 255) begin

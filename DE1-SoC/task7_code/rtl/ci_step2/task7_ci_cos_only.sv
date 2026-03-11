@@ -8,7 +8,7 @@
 //
 // Interface Notes:
 //   Uses Nios II CI-style start/done handshake.
-//   `dataa` carries the input sample; `datab` and `n` are unused placeholders.
+//   `dataa` carries the input sample; `datab` is an unused placeholder.
 //------------------------------------------------------------------------------
 module task7_ci_cos_only #(
     parameter int FX_W = 40,
@@ -24,7 +24,6 @@ module task7_ci_cos_only #(
     input  logic start,
     input  logic [31:0] dataa,
     input  logic [31:0] datab,
-    input  logic [7:0] n,
     output logic done,
     output logic [31:0] result
 );
@@ -136,9 +135,9 @@ module task7_ci_cos_only #(
 
     // Unused by this operation, but preserved for the standard custom-instruction interface.
     logic [31:0] datab_unused;
-    logic [7:0]  n_unused;
     always_comb begin
         datab_unused = datab;
-        n_unused = n;
     end
 endmodule
+
+

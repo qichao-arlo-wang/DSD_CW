@@ -8,7 +8,7 @@
 //
 // Interface Notes:
 //   Uses Nios II CI-style start/done handshake.
-//   `n[0] = 0` selects add, `n[0] = 1` selects subtract.
+//   `n = 0` selects add, `n = 1` selects subtract.
 //------------------------------------------------------------------------------
 module task7_ci_fp32_addsub #(
     parameter int ADD_LATENCY = 1
@@ -19,7 +19,7 @@ module task7_ci_fp32_addsub #(
     input  logic start,
     input  logic [31:0] dataa,
     input  logic [31:0] datab,
-    input  logic [7:0] n,
+    input  logic        n,
     output logic done,
     output logic [31:0] result
 );
@@ -27,16 +27,13 @@ module task7_ci_fp32_addsub #(
     logic add_busy;
     logic add_start_gated;
 
-    // n[0] = 0 -> add, n[0] = 1 -> subtract
+    // n = 0 -> add, n = 1 -> subtract
     always_comb begin
         b_eff = datab;
-        if (n[0]) begin
+        if (n) begin
             b_eff[31] = ~datab[31];
         end
         add_start_gated = start && !add_busy;
-        if (|n[7:1]) begin
-            // Reserved CI mode bits are intentionally ignored in this block.
-        end
     end
 
     task7_fp32_add_unit #(
@@ -53,3 +50,5 @@ module task7_ci_fp32_addsub #(
         .result(result)
     );
 endmodule
+
+

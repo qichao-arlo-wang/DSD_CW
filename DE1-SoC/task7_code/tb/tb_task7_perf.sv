@@ -26,17 +26,17 @@ module tb_task7_perf;
     // single-DUT latency benchmark unless only one DUT is active in the test.
     task7_ci_fp32_mul u_mul (
         .clk(clk), .reset(reset), .clk_en(clk_en), .start(start),
-        .dataa(dataa), .datab(datab), .n(n), .done(done_mul), .result(result_mul)
+        .dataa(dataa), .datab(datab), .done(done_mul), .result(result_mul)
     );
 
     task7_ci_fp32_addsub u_add (
         .clk(clk), .reset(reset), .clk_en(clk_en), .start(start),
-        .dataa(dataa), .datab(datab), .n(n), .done(done_add), .result(result_add)
+        .dataa(dataa), .datab(datab), .n(n[0]), .done(done_add), .result(result_add)
     );
 
     task7_ci_cos_only u_cos (
         .clk(clk), .reset(reset), .clk_en(clk_en), .start(start),
-        .dataa(dataa), .datab(datab), .n(n), .done(done_cos), .result(result_cos)
+        .dataa(dataa), .datab(datab), .done(done_cos), .result(result_cos)
     );
 
     task7_ci_f_single u_f (
@@ -114,3 +114,5 @@ module tb_task7_perf;
         $finish;
     end
 endmodule
+
+

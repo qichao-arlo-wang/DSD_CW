@@ -19,7 +19,6 @@ module task7_ci_fp32_mul #(
     input  logic start,
     input  logic [31:0] dataa,
     input  logic [31:0] datab,
-    input  logic [7:0] n,
     output logic done,
     output logic [31:0] result
 );
@@ -41,7 +40,5 @@ module task7_ci_fp32_mul #(
         .done(done),
         .result(result)
     );
-
-    logic [7:0] n_unused;
-    always_comb n_unused = n;
 endmodule
+
