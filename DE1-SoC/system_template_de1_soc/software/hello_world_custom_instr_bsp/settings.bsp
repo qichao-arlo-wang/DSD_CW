@@ -2,12 +2,12 @@
 <sch:Settings xmlns:sch="http://www.altera.com/embeddedsw/bsp/schema">
         <BspType>hal</BspType>
         <BspVersion>default</BspVersion>
-        <BspGeneratedTimeStamp>2026-3-11 2:59:00</BspGeneratedTimeStamp>
-        <BspGeneratedUnixTimeStamp>1773197940261</BspGeneratedUnixTimeStamp>
+        <BspGeneratedTimeStamp>2026-3-11 14:32:12</BspGeneratedTimeStamp>
+        <BspGeneratedUnixTimeStamp>1773239532191</BspGeneratedUnixTimeStamp>
         <BspGeneratedLocation>C:\Users\arlow\Downloads\DSD_CW\DE1-SoC\system_template_de1_soc\software\hello_world_custom_instr_bsp</BspGeneratedLocation>
         <BspSettingsFile>settings.bsp</BspSettingsFile>
         <SopcDesignFile>C:\Users\arlow\Downloads\DSD_CW\DE1-SoC\system_template_de1_soc\first_nios2_system.sopcinfo</SopcDesignFile>
-        <SystemFileHash>e969bdd663cc1e2492ae2aa24d0e59aba557a1b875dd791ba9e0f383728c1</SystemFileHash>
+        <SystemFileHash>b9ff2973f9a732a84866cb2b1598af6e90524cedb3d4eeab23ca94d55cbcb</SystemFileHash>
         <JdiFile>default</JdiFile>
         <Cpu>cpu</Cpu>
         <SchemaVersion>1.9</SchemaVersion>

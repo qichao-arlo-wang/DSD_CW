@@ -83,6 +83,22 @@
          type = "String";
       }
    }
+   element first_nios2_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element first_nios2_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
    element jtag_uart
    {
       datum _sortIndex
@@ -113,6 +129,14 @@
       {
          value = "1052704";
          type = "String";
+      }
+   }
+   element nios_custom_instr_floating_point_0
+   {
+      datum _sortIndex
+      {
+         value = "8";
+         type = "int";
       }
    }
    element onchip_mem
@@ -183,32 +207,8 @@
    {
       datum _sortIndex
       {
-         value = "9";
-         type = "int";
-      }
-   }
-   element task7_fp_add_sub
-   {
-      datum _sortIndex
-      {
          value = "7";
          type = "int";
-      }
-   }
-   element task7_fp_mul
-   {
-      datum _sortIndex
-      {
-         value = "8";
-         type = "int";
-      }
-   }
-   element task7_fp_mul.clock
-   {
-      datum _tags
-      {
-         value = "";
-         type = "String";
       }
    }
 }
@@ -257,7 +257,7 @@
   <parameter name="cpuArchRev" value="1" />
   <parameter name="cpuID" value="0" />
   <parameter name="cpuReset" value="false" />
-  <parameter name="customInstSlavesSystemInfo"><![CDATA[<info><slave name="task7_fp_add_sub_0" baseAddress="0" addressSpan="2" clockCycleType="COMBINATORIAL" /><slave name="task7_fp_mul_0" baseAddress="2" addressSpan="1" clockCycleType="COMBINATORIAL" /><slave name="task7_ci_cos_only_0" baseAddress="3" addressSpan="1" clockCycleType="VARIABLE" /></info>]]></parameter>
+  <parameter name="customInstSlavesSystemInfo"><![CDATA[<info><slave name="task7_ci_cos_only_0" baseAddress="0" addressSpan="1" clockCycleType="VARIABLE" /><slave name="nios_custom_instr_floating_point_0" baseAddress="252" addressSpan="4" clockCycleType="VARIABLE" /></info>]]></parameter>
   <parameter name="customInstSlavesSystemInfo_nios_a" value="&lt;info/&gt;" />
   <parameter name="customInstSlavesSystemInfo_nios_b" value="&lt;info/&gt;" />
   <parameter name="customInstSlavesSystemInfo_nios_c" value="&lt;info/&gt;" />
@@ -456,6 +456,13 @@
   <parameter name="width" value="8" />
  </module>
  <module
+   name="nios_custom_instr_floating_point_0"
+   kind="altera_nios_custom_instr_floating_point"
+   version="23.1"
+   enabled="1">
+  <parameter name="useDivider" value="0" />
+ </module>
+ <module
    name="onchip_mem"
    kind="altera_avalon_onchip_memory2"
    version="23.1"
@@ -521,16 +528,6 @@
   <parameter name="CORDIC_W" value="28" />
   <parameter name="FX_FRAC" value="22" />
   <parameter name="FX_W" value="40" />
- </module>
- <module
-   name="task7_fp_add_sub"
-   kind="task7_fp_add_sub"
-   version="1.0"
-   enabled="1">
-  <parameter name="ADD_LATENCY" value="1" />
- </module>
- <module name="task7_fp_mul" kind="task7_fp_mul" version="1.0" enabled="1">
-  <parameter name="MUL_LATENCY" value="2" />
  </module>
  <connection
    kind="avalon"
@@ -606,21 +603,6 @@
  <connection kind="clock" version="23.1" start="clk_0.clk" end="sysid.clk" />
  <connection kind="clock" version="23.1" start="clk_0.clk" end="led_pio.clk" />
  <connection kind="clock" version="23.1" start="clk_0.clk" end="onchip_mem.clk1" />
- <connection
-   kind="clock"
-   version="23.1"
-   start="clk_0.clk"
-   end="task7_fp_mul.clock" />
- <connection
-   kind="clock"
-   version="23.1"
-   start="clk_0.clk"
-   end="task7_fp_add_sub.clock" />
- <connection
-   kind="clock"
-   version="23.1"
-   start="clk_0.clk"
-   end="task7_ci_cos_only.clock" />
  <connection kind="interrupt" version="23.1" start="cpu.irq" end="jtag_uart.irq">
   <parameter name="irqNumber" value="16" />
  </connection>
@@ -635,8 +617,8 @@
    kind="nios_custom_instruction"
    version="23.1"
    start="cpu.custom_instruction_master"
-   end="task7_fp_add_sub.ncs_cis0">
-  <parameter name="CIName" value="task7_fp_add_sub_0" />
+   end="task7_ci_cos_only.ncs_cis0">
+  <parameter name="CIName" value="task7_ci_cos_only_0" />
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0" />
  </connection>
@@ -644,19 +626,10 @@
    kind="nios_custom_instruction"
    version="23.1"
    start="cpu.custom_instruction_master"
-   end="task7_fp_mul.ncs_cis0">
-  <parameter name="CIName" value="task7_fp_mul_0" />
+   end="nios_custom_instr_floating_point_0.s1">
+  <parameter name="CIName">nios_custom_instr_floating_point_0</parameter>
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="2" />
- </connection>
- <connection
-   kind="nios_custom_instruction"
-   version="23.1"
-   start="cpu.custom_instruction_master"
-   end="task7_ci_cos_only.ncs_cis0">
-  <parameter name="CIName" value="task7_ci_cos_only_0" />
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="3" />
+  <parameter name="baseAddress" value="252" />
  </connection>
  <connection kind="reset" version="23.1" start="clk_0.clk_reset" end="cpu.reset" />
  <connection
@@ -675,21 +648,6 @@
    version="23.1"
    start="clk_0.clk_reset"
    end="led_pio.reset" />
- <connection
-   kind="reset"
-   version="23.1"
-   start="clk_0.clk_reset"
-   end="task7_fp_add_sub.reset" />
- <connection
-   kind="reset"
-   version="23.1"
-   start="clk_0.clk_reset"
-   end="task7_fp_mul.reset" />
- <connection
-   kind="reset"
-   version="23.1"
-   start="clk_0.clk_reset"
-   end="task7_ci_cos_only.reset" />
  <connection
    kind="reset"
    version="23.1"
