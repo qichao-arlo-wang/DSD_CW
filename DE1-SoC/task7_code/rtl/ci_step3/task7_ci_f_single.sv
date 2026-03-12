@@ -5,7 +5,7 @@
 // Role In Task 7:
 //   Implements the complete expression:
 //     f(x) = 0.5*x + x^3*cos((x - 128)/128)
-//   by coordinating one fp32 multiplier, one fp32 adder, and one CORDIC cosine
+//   by coordinating one FP multiply IP unit, one FP add IP unit, and one CORDIC cosine
 //   core through an FSM with start/done handshaking.
 //
 // Interface Notes:
@@ -20,7 +20,7 @@ module task7_ci_f_single #(
     parameter int CORDIC_ITER = 18,
     parameter int CORDIC_ITER_PER_CYCLE = 3,
     parameter int MUL_LATENCY = 2,
-    parameter int ADD_LATENCY = 1
+    parameter int ADD_LATENCY = 2
 ) (
     input  logic clk,
     input  logic reset,
@@ -39,7 +39,7 @@ module task7_ci_f_single #(
     //   f(x) = 0.5*x + x^3*cos((x-128)/128)
     //
     // Design intent:
-    // - Keep area low by reusing one fp32 multiplier and one fp32 adder.
+    // - Keep area low by reusing one FP multiply IP unit and one FP add IP unit.
     // - Run CORDIC in parallel with x^2/x^3 path to hide cosine latency.
     // - Keep CORDIC fixed-point only; all non-cos arithmetic stays fp32.
     // - Use an FSM to serialize dependent operations and cache intermediates.
@@ -185,7 +185,7 @@ module task7_ci_f_single #(
         .fp_out(cos_fp_wire)
     );
 
-    task7_fp32_mul_unit #(
+    task7_fp_mul_ip_unit #(
         .LATENCY(MUL_LATENCY)
     ) u_mul (
         .clk(clk),
@@ -199,7 +199,7 @@ module task7_ci_f_single #(
         .result(mul_result)
     );
 
-    task7_fp32_add_unit #(
+    task7_fp_add_ip_unit #(
         .LATENCY(ADD_LATENCY)
     ) u_add (
         .clk(clk),
@@ -360,3 +360,4 @@ module task7_ci_f_single #(
         n_unused = n;
     end
 endmodule
+

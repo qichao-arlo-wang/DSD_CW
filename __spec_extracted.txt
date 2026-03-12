@@ -1,0 +1,1015 @@
+
+-3105151460500quar
+
+
+
+
+
+
+
+
+DSD 
+COURSEWORK
+
+
+
+Table of Contents
+
+		 TOC \o "1-2" \h \z \u Introduction	 PAGEREF _Toc217981077 \h 4
+		Objective: Acceleration of Arithmetic Functions	 PAGEREF _Toc217981078 \h 5
+		Task 1: NIOS II Setup (Completion time around 2 hours)	 PAGEREF _Toc217981079 \h 6
+		Task 2: Computing a simple function (Completion time around 1.5 hours)	 PAGEREF _Toc217981080 \h 16
+		Task 3: Evaluate a more complex mathematical expression (Completion time around 30 min)	 PAGEREF _Toc217981081 \h 20
+		Task 4: Add multiplier support (Completion time around 30 min)	 PAGEREF _Toc217981082 \h 20
+		Task 5: Add custom instruction to NIOS (Completion time around 2 hours)	 PAGEREF _Toc217981083 \h 22
+		Task 6: Add floating-point cores NIOS (Completion time around 2 hours)	 PAGEREF _Toc217981084 \h 27
+		Task 7: Add Dedicated Hardware Block to compute the inner part of the arithmetic expression (Completion time around 10 hours)	 PAGEREF _Toc217981085 \h 32
+		Task 8: Add Dedicated Hardware Block to compute the arithmetic expression (Completion time from 30min to …)	 PAGEREF _Toc217981086 \h 34
+		Marking scheme	 PAGEREF _Toc217981087 \h 36
+		Coursework Submission	 PAGEREF _Toc217981088 \h 36
+		Proposed work schedule and Intermediate deliverables deadlines	 PAGEREF _Toc217981089 \h 36
+		Reports - Marking	 PAGEREF _Toc217981090 \h 37
+		Code	 PAGEREF _Toc217981091 \h 39
+		APPENDIX	 PAGEREF _Toc217981092 \h 40
+		Troubleshooting	 PAGEREF _Toc217981093 \h 40
+		Application Profiling	 PAGEREF _Toc217981094 \h 40
+		Alternatives to NIOS II/Altera	 PAGEREF _Toc217981095 \h 40
+		Remote Compilation	 PAGEREF _Toc217981096 \h 41
+
+
+Requirements to complete this coursework:
+Quartus Prime Lite (v.23.1);
+Nios II Embedded Design Suite (v.23.1);
+Questa Intel Starter FPGA Edition
+Matlab (or Python);
+Terasic DE1-SoC board (DE10-Lite can also be used);
+Coursework source files including DE1-SoC documentation;
+On-line references from Intel;
+Windows 10/11
+
+Legend:
+i Important information.
+& Reference material that you should read before proceeding.
+@ Work you should deliver. A set of tasks for you to do, and deliverables to include in your report.
+! Debug hints
+J Helpful information
+
+i Please read this document carefully before starting the coursework as it will guide you to complete the coursework efficiently. There are links to references that explain, and exemplify, procedures you will need to know how to do. You’re advised to read and understand them.
+
+Introduction
+In this coursework you will acquire experience in the design of digital systems. As a case study, we will focus on the acceleration of computationally intensive applications, and we will see how having customising hardware blocks tuned for a certain application can lead to a better performing system compared to one that does not have these computational units.
+In this coursework we will start by running applications on a generic central processing unit (CPU), assess the system’s performance and then focus on the design of dedicated hardware processing elements for the acceleration of the same application. 
+The system design will target a Field-Programmable Gate Array (FPGA) device from Intel. These are generic digital devices that support the implementation of any digital hardware design after their fabrication, including the implementation of soft-processors. The FPGA you’re going to use is a development kit (DE1-SoC) from Terasic, which is available from STORES. The target CPU is the soft-processor NIOS II, also provided by Intel. More information about NIOS II can be found here:  
+https://www.intel.com/content/www/us/en/support/programmable/support-resources/support-centers/nios-ii-support.html
+The main application for configuration of the FPGA is Quartus software from Intel. It allows to design and program digital systems based on FPGAs. The Platform Designer tool allows the implementation of a complex digital system including a CPU and all the required components to make it work. You can find more about it here: 
+https://www.intel.com/content/www/us/en/programmable/products/design-software/fpga-design/quartus-prime/features/qts-platform-designer.html
+You will program the NIOS II processor by writing C code using EDS. Further details on this will be provided later in the hand-out.
+
+In the coursework you are about to do, you’ll start by describing your system in Platform Designer (which you can access from Quartus), synthesize it in Quartus, and then configure the FPGA device. At this point you don’t need to write any Verilog/VHDL. Later, you can use Verilog /block diagrams/VHDL to describe your customized hardware blocks. The Embedded Design Handbook (https://www.intel.com/content/www/us/en/docs/programmable/683689/current/introduction-28202.html) is the primary documentation for the Intel tools for embedded system development.
+ 
+Objective: Acceleration of Arithmetic Functions
+In this coursework you are going to see how dedicated hardware can be applied to a general-purpose digital system to accelerate certain parts of the calculations. The more specialised the hardware blocks are, the faster the computation becomes, but that’s reflected in FPGA resources or circuit area.
+The main purpose of this coursework is to create a digital system that evaluates the following function:
+fx= i=1N0.5*xi+xi3cos((xi-128)/128)	                      (1)
+under single-precision floating point number representation, for any given input vector x, where each element of the vector is a single-precision floating-point number taking values between 0 and 255.
+In order to test and assess the performance of your system, you should use the following test cases (Matlab notation):
+X=0:5:255
+X =0:1/8:255
+X = 0:1/256:255
+where x is a single-precision floating-point number. For example, the first case describes an input vector X with the following elements: [0, 5, 10, 15, …, 255]. Please note that these are specific test examples. Your system should not be optimised for these instances.
+Your design should be assessed under the following metrics (when they are applicable).
+FPGA resources used by your system (Logic Elements, Embedded Multipliers, Memory Bits). As the target device is fixed, the proposed metric for FPGA resource utilisation is the average utilisation of any of its on-chip FPGA resources. For example, if your design uses LE Logic Elements, EM Embedded Multipliers, and MB Memory Bits, then the FPGA resources are:FPGA resources = 1/3*LETotal LE in the device+EMTotal EM in the device+MBTotal MB in the device
+Latency or Execution time – This is the time that is needed for your system to compute (1) for an input vector X. This includes only the time needed for the evaluation of (1) for the whole vector, without taking into account any initialisation time and so on.
+Thus, you should be able to plot the performance of your design in a performance vs FPGA resources plot and compare different solutions.
+
+Task 1: NIOS II Setup (Completion time around 2 hours)
+Aim:
+Familiarise yourselves with HW development of the NIOS II processor system
+Understand the functionality of the various components and how they interact with the CPU
+Understand the space of the design choices and their impact the system’s performance.
+Altera, the manufacturer of your target FPGA, offers an embedded processor (also known as soft-processor), named NIOS II, which can be instantiated in any design, and even more than once. The software programming for NIOS II is done in EDS (Eclipse) using C code.
+@ Learn how to setup a system with a NIOS II processor, and start building your project. Download the project template (system_template_de1_soc) available on the DSD coursework page. Place the files to a directory of your choice.
+Important: 
+Do not use spaces in the directory path name. You need to store the project template in a local drive (no network, or cloud drive i.e. oneDrive).
+Do not download and install the design files from Altera, but use the ones provided.
+Your main file is the hello_word.qpf. Open the file (i.e. double click on it if you use windows) to see what has been given to you. You will see the input/output pins only. These pins are connected to specific pins on the FPGA of your board in order to allow your design to communicate with the outside world. In the Project Navigator you will see that the Cyclone V device has been selected as the target device. This is the device that comes with your DE1-SoC board.
+The rest of the section is a summary extracted by the NIOS II tutorial provided by Intel (https://www.intel.com/content/www/us/en/docs/programmable/683689/current/hardware-development-tutorial.html, https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/an/an717.pdf)
+Create a New Platform Designer System
+The design of the processor is a complex process, but Altera provides a tool (Platform Designer) to help you with this task. Through Platform Designer, you can generate a NIOS II processor system, add the desired components, and configure how they connect. 
+Click Platform Designer on the Tools menu in the Quartus software. A new window will open and your system will have on the clock signal.
+Define the System in Platform Designer
+You will use the Platform Designer to define the hardware characteristics of the Nios II system, such as which Nios II core to use, and what components to include in the system. Platform Designer does not define software behaviour, such as where in memory to store instructions or where to send the stderr character stream.
+In this section, you perform the following steps:
+1. Specify target FPGA and clock settings.
+2. Add the Nios II core, on-chip memory, and other components.
+3. Specify base addresses and interrupt request (IRQ) priorities.
+4. Generate the system.
+The Platform Designer design process does not need to be linear. The design steps in this tutorial are presented in the most straightforward order for a new user to understand. However, you can perform Platform Designer design steps in a different order. 
+Specify Target FPGA and Clock Settings
+The Clock Settings and the Project Settings tabs specify the system's relationship to other devices in the system.
+Perform the following steps:
+1. On the Platform designer view, select the Device Family tab in the bottom left (or go to View -> Device Family) and ensure the device matches the Altera FPGA you are targeting. If a warning appears stating the selected device family does not match the Quartus project settings, ignore the warning. You specify the device in the Quartus project settings later in this tutorial. Since you have run Platform Designer from your project, where the device has been already specified, these fields should be already populated.
+2. In the documentation for your board look up the clock frequency of the oscillator that drives the FPGA.
+3.  In the Platform designer view there should already be a Clock Source (clk_0) instantiated. Double click the name to edit the clock frequency. The frequency you specify for clk_0 must match the oscillator that drives the FPGA. Your board has a 50MHz oscillator. Set this value, if it has not been already populated.
+Next, you begin to add hardware components to the Platform Designer system. As you add each component, you configure it appropriately to match the design specifications.
+Add the On-Chip Memory
+Processor systems require at least one memory for data and instructions. As a starting point, let’s use one 20 KB on-chip memory for both data and instructions. To add the memory, perform the following steps:
+On the IP Catalog tab (to the left of the System Contents tab), expand Basic Functions, expand On Chip Memory, and then click On-Chip Memory (RAM or ROM) IntelFPGA IP
+Click Add. The On-Chip Memory (RAM or ROM) parameter editor appears.
+In the Type list, select RAM (Writeable).
+In the Block type list, select Auto.
+In the Total memory size box, type 20480 to specify a memory size of 20 KB.
+Do not change any of the other default settings
+Click Finish. You return to Platform Designer.
+Click the System Contents tab. An instance of the on-chip memory appears in the system contents table.
+In the Name column of the system contents table, right-click the on-chip memory and click Rename.
+Type “onchip_mem” and press Enter.
+In the System Contents you can see that the memory has been added and possible connections to existing signals have been highlighted. We will come back to these connections later.
+
+
+
+Add the Nios II Processor Core
+In this section you add the Nios II/f core and configure it to use 2 KB of on-chip instruction cache memory, 2KB of on-chip data cache memory, and without any hardware support for multiplication or division operations.
+Perform the following steps to add a Nios II/f core to the system:
+On the IP Catalog tab, expand Processors and Peripherals -> Embedded Processors, and then click Nios II Processor.
+Click Add. The Nios II Processor parameter editor appears, displaying the Main tab. A new GUI pops-up.
+Under Select a Nios II core, select Nios II/f.
+Switch to the Arithmetic Instructions tab for Multiply/Shift/Rotate Hardware select Manual Selection.
+Set Multiply Implementation and Multiply extended Implementation to None. This tells the tool to not instantiate a hardware multiplier in the processor.
+Set Divide Hardware to None. This tells the tool to not instantiate a hardware divider in the processor.
+Click Finish. You return to the Platform Designer System Contents tab, and an instance of the Nios II core appears in the system contents table. Ignore the exception and reset vector error messages. You resolve these errors in steps 13 and 14.
+In the Name column, right-click the Nios II processor and click Rename.
+Type “cpu” and press Enter.
+In the Connections column, connect the clk port of the clk_0 clock source to both the clk1 port of the on-chip memory and the clk port of the Nios II processor by clicking the hollow dots on the connection line. The dots become solid indicating the ports are connected.
+Connect the clk_reset port of the clk_0 clock source to both the reset1 port of the on-chip memory and the reset port of the Nios II processor. This step enables the clock block to provide synchronous reset signal to the memory and the processor.
+Connect the clk_in_reset port of the clk_0 clock source to the debug_reset_request port of the cpu. This will allow you later on to reset the whole system through your PC.
+Connect the s1 port of the on-chip memory to both the data_master port and instruction_master port of the Nios II processor. This last step connects the NIOS processor with the on-chip memory that you have instantiated through the Avalon bus. The NIOS processor serves as the master in this connection (as it initiates transactions) where the memory has a slave interface. The jtag signals are used for debugging purposes. From this point onwards, the Platform Designer tool knows that the processor is connected to a memory.
+Double-click the Nios II processor row of the system contents table to reopen the Nios II Processor parameter editor.
+Switch to the Vectors tab. Under Reset Vector, select onchip_mem.s1 in the Reset vector memory list and type 0x0 in the Reset vector offset box. This tells to the processor where to set its Program Counter (PC) in case of a reset.
+Under Exception Vector, select onchip_mem.s1 in the Exception vector memory list and type 0x20 in the Exception vector offset box.
+Click the Caches and Memory Interfaces tab.
+In the Instruction cache list, select 2 Kbytes.
+In the Add burstcount signal to instruction_master list, select Disable.
+In the Number of tightly coupled instruction master port(s) list, select None.
+Do not change any settings on the Advanced Features, MMU and MPU Settings, JTAG Debug Module, or Custom Instruction tabs.
+Add the JTAG UART
+The JTAG UART provides a convenient way to communicate character data with the Nios II processor through the USB-Blaster download cable. You will need this later to download a programme to the processor from your PC and to be able to see what the processor is outputting. Perform the following steps to add the JTAG UART:
+On the IP Catalog tab, expand Interface Protocols, expand Serial, and then click JTAG UART Intel FPGA IP.
+Click Add. The JTAG UART parameter editor appears. Do not make any changes.
+Click Finish. You return to the Platform Designer System Contents tab, and an instance of the JTAG UART appears in the system contents table.
+In the Name column, right-click the JTAG UART and click Rename.
+Type jtag_uart and press Enter.
+Connect the clk port of the clk_0 clock source to the clk port of the JTAG UART.
+Connect the clk_reset port of the clk_0 clock source to the reset port of the JTAG UART.
+Connect the data_master port of the Nios II processor to the avalan_jtag_slave port of the JTAG UART.
+Please note that the instruction_master port of the Nios II processor does not connect to the JTAG UART because the JTAG UART is not a memory device and cannot send instructions to the Nios II processor.
+Add the Interval Timer
+Most control systems use a timer component to enable precise calculation of time. To provide a periodic system clock tick, the Nios II HAL requires a timer. Perform the following steps to add the timer:
+On the IP Catalog tab, expand  Processors and Peripherals -> Peripherals and then click Interval Timer Intel FPGA IP.
+Click Add. The Interval Timer parameter editor appears.
+In the Presets tab (on the right), select Full-featured and press Apply. Please make a note of the Timeout period setting.
+Click Finish. You return to the Platform Designer System Contents tab, and an instance of the interval timer appears in the system contents table.
+In the Name column, right-click the interval timer and click Rename.
+Type sys_clk_timer and press Enter.
+Connect the clk port of the clk_0 clock source to the clk port of the interval timer.
+Connect the clk_reset port of the clk_0 clock source to the reset port of the interval timer.
+Connect the data_master port of the Nios II processor to the s1 port of the interval timer.
+
+Add the System ID Peripheral
+The system ID peripheral safeguards against accidentally downloading software compiled for a different Nios II system. If the system includes the system ID peripheral, the Nios II SBT for Eclipse can prevent you from downloading programs compiled for a different system.
+Perform the following steps to add the system ID peripheral:
+On the IP Catalog tab, expand Basic Functions -> Simulation; Debug and Verification -> Debug and Perfomance, and then click System ID Peripheral Intel FPGA IP.
+Click Add. The System ID Peripheral parameter editor appears.
+Click Finish. You return to the Platform Designer System Contents tab, and an instance of the system ID peripheral appears in the system contents table.
+In the Name column, right-click the system ID peripheral and click Rename.
+Type sysid and press Enter.
+Connect the clk port of the clk_0 clock source to the clk port of the system ID peripheral.
+Connect the clk_reset port of the clk_0 clock source to the reset port of the system ID peripheral.
+Connect the data_master port of the Nios II processor to the control_slave port of the system ID peripheral.
+Add the PIO
+PIO signals provide an easy method for Nios II processor systems to receive input stimuli and drive output signals. Complex control applications might use hundreds of PIO signals which the Nios II processor can monitor. This design example uses eight PIO signals to drive LEDs on the board.
+Perform the following steps to add the PIO. 
+On the IP Catalog tab, expand Processors and Peripherals -> Peripherals, and then click PIO (Parallel I/O) Intel FPGA IP.
+Click Add. The PIO (Parallel I/O) parameter editor appears. 
+Do not change the default settings. Click Finish and return to the Platform Designer System Contents tab. In the name column right-click the PIO and click rename. Give the name led_pio and press enter.
+Connect the clk port to clk_0 clock source, connect the reset port to clk_reset of clk_0, and connect the data_master port of the NIOS II processor to the s1 port of PIO
+In the external connection row, click Double-click to export (grayed out) in the Export column to export the PIO ports (press enter) 
+
+Specify Base Addresses and Interrupt Request Priorities
+At this point, you have added all the necessary hardware components to the system. Now you must specify how the components interact to form a system. In this section, you assign base addresses for each slave component, and assign interrupt request (IRQ) priorities for the JTAG UART and the interval timer. Platform Designer provides the Assign Base Addresses command which makes assigning component base addresses easy. For many systems, including this design example, Assign Base Addresses is adequate. However, you can adjust the base addresses to suit your needs. Below are some guidelines for assigning base addresses:
+■ Nios II processor cores can address a 31-bit address span. You must assign base address between 0x00000000 and 0x7FFFFFFF.
+■ Nios II programs use symbolic constants to refer to addresses. Do not worry about choosing address values that are easy to remember.
+■ Address values that differentiate components with only a one-bit address difference produce more efficient hardware. Do not worry about compacting all base addresses into the smallest possible address range, because this can create less efficient hardware.
+■ Platform Designer does not attempt to align separate memory components in a contiguous memory range. For example, if you want an on-chip RAM and an off-chip RAM to be addressable as one contiguous memory range, you must explicitly assign base addresses. 
+Platform Designer also provides an Assign Interrupt Numbers command which connects IRQ signals to produce valid hardware results. However, assigning IRQs effectively requires an understanding of how software responds to them. Because Platform Designer does not know the software behaviour, Platform Designer cannot make educated guesses about the best IRQ assignment. 
+The Nios II HAL interprets low IRQ values as higher priority. The timer component must have the highest IRQ priority to maintain the accuracy of the system clock tick.
+To assign appropriate base addresses and IRQs, perform the following steps:
+On the System tab on the toolbar, click Assign Base Addresses to make Platform Designer assign functional base addresses to each component in the system. Click the “Address Map” to see the assigned values”. Values in the Base and End columns might change, reflecting the addresses that Platform Designer reassigned.
+Click back on the “System Contents”. In the IRQ column, connect the Nios II processor to the JTAG UART and interval timer.
+Click the IRQ value for the jtag_uart component to select it.
+Type 16 and press Enter to assign a new IRQ value.
+Click the IRQ value for the sys_clk_timer component to select it.
+Type 1 and press Enter to assign a new IRQ value. 
+The lower the IRQ number, the higher the priority of the interrupt that would be created.
+
+Generate the System
+You are now ready to generate the system. Perform the following steps:
+Click the Generate HDL  in the bottom right corner.
+Select None in the Create simulation model list. Because this tutorial does not cover the hardware simulation flow, you can select these settings to shorten generation time.
+Under Output Directory for Path select an appropriate path.  Click Generate. The Save changes? dialog box appears, prompting you to save your design.
+Type first_nios2_system in the File name box and click Save. The Generate dialog box appears and system generation process begins. The generation process can take several minutes. Output messages appear as generation progresses. When generation completes, the final "Info: Finished: Create HDL design files for synthesis" message appears.
+Click Close to close the dialog box.
+On the File menu, click Exit to close Platform Designer and return to the Quartus Prime Lite software. Press OK on the pop up box.
+In Quartus, select Add/Remove Files in Project from the Project tab in the toolbar. Browse for the first_nios2_system.qsys file and once it is added, click Apply and OK. This will add the system to the Quartus project.
+In the Add/Remove Files in Project window, select the libraries tab on the left. Under Project Libraries, select the top-level folder for the project (system_template_de1_soc) which contains the first_nios2_system.qys file. Add this folder and click Apply and OK.
+Congratulations! You have finished creating the Nios II processor system. You are ready to integrate the system into the Quartus II hardware project and use the Nios II SBT for Eclipse to develop software.
+
+Integrate the Platform Designer System into the Quartus II Project
+To instantiate the system module in the .bdf (i.e. your schematic capture file), perform the following steps (by closing Platform Designer, you should have gone back to Quartus on your hello_world system):
+Double-click in the empty space to the right of the input and output wires. The Symbol dialog box appears.
+Under Libraries, expand your directory and locate your system (“first_nios2_system”).
+Click first_nios2_system. The Symbol dialog box displays the first_nios2_system symbol.
+Click OK. You return to the .bdf schematic. The first_nios2_system symbol tracks with your mouse pointer.
+Position the symbol so the pins on the symbol align with the wires on the schematic.
+Click to anchor the symbol in place.
+Make the connections:
+connect clk_clk to iCLK_50
+connect the leds.
+leave the DRAM pins unconnected.
+To save the completed .bdf, click Save on the File menu.
+
+Compile the Quartus II Project and verify timing
+At this point you are ready to compile the Quartus II project and verify that the resulting design meets timing requirements. You must compile the hardware design to create a .sof that you can download to the board. After the compilation completes, you must analyze the timing performance of the FPGA design to verify that the design will work in hardware. In this case, the sdc file (i.e. the Synopsys Design Constraints File) has already been included to your project (by us), so you do not have to worry about this. You just need to know that the target clock frequency for the design is 50MHz.
+To compile the Quartus II project, perform the following steps:
+On the Processing menu, click Start Compilation. The Tasks window and percentage and time counters in the lower-right corner display progress. The compilation process can take several minutes (7 min in my computer ☹ ). When compilation completes, a dialog box displays the message "Full Compilation was successful."
+Click OK. 
+Expand the Timing Analyzer category in the compilation report.
+Click Multicorner Timing Analysis Summary.
+Verify that the Worst-case Slack values are positive numbers for Setup, Hold, Recovery, and Removal. If any of these values are negative, the design might not operate properly in hardware. To meet timing, adjust Quartus assignments to optimize fitting, or reduce the oscillator frequency driving the FPGA. (You should not have to worry for any of the above). You can ignore errors from the unconstrained paths report.
+Congratulations! You have finished integrating the Nios II system into the Quartus II project. You are ready to download the .sof to the target board.
+Just to recap. So far you have seen how you can design a processing system based around a soft-processor (fist_nios2_sytstem), and integrate it in a project where the final connections to the physical pins of the FPGA takes place. 
+Download the Hardware Design to the Target FPGA
+In this section you download the .sof to the target board. Perform the following steps:
+Connect the board to the host computer with the download cable, and apply power to the board.
+(only for Linux) In the VirtualBox toolbar go to Devices->USB and ensure Altera DE_SoC [0139] is checked. If only Altera [0001] is displayed, check this for now, and once you are looking for hardware, check Devices->USB again and Altera DE_SoC [0139] should now be available.
+On the Tools menu in the Quartus Prime Lite software, click Programmer. The Quartus Prime Lite Programmer appears and automatically displays the appropriate configuration file (hello_world.sof)
+Click Hardware Setup in the upper left corner of the Quartus Programmer to verify your download cable settings. The Hardware Setup dialog box appears.
+Select the appropriate download cable in the Currently selected hardware list. It should display DE-SoC [USB-1].If the appropriate download cable does not appear in the list, you must first install drivers for the cable.
+Click Close.
+Click Auto Detect. A window will pop up and you should select the relevant serial code for the device (i.e. 5CSEMA5)
+Remove the entry  for the 5CSEMA device and leave both the hello_world_time_limited.sof file and the SOCVHPS device. If this removed the hellow_world_time_limited.sof file, just add it back in using the Add File button. You should have a path that goes as follows TDI -> SOCVHPS -> 5CSEMA5F31 -> TDO
+In the hello_world_time_limited.sof row, turn on Program/Configure.
+Click Start. The Progress meter sweeps to 100% as the Quartus II software configures the FPGA.
+At this point, the Nios II system is configured and running in the FPGA but it does not yet have a program in memory to execute. If the HEX displays used to show something, they should have stopped now.
+You will notice that you are getting a message that you are using a time-limited core. You can ignore this at the moment. This is due to the use of NIOS/f version that requires licensing. As long as you keep flashing the FPGA within 1 hour, you should not have a problem using the generated system.
+Develop Software Using the Nios II SBT for Eclipse
+In this section, you start the Nios II SBT for Eclipse and compile a simple C language program. This section presents only the most basic software development steps to demonstrate software running on the hardware system you created in previous sections.
+Create a New Nios II Application and BSP from Template
+In this section you create new Nios II C/C++ application and BSP projects. Perform the following steps:
+Start the Nios II SBT for Eclipse. If you are running on the provided VM, open a Terminal window and type eclipse. On Windows computers, click Start, point to Programs, Altera, Nios II EDS <version>, and then click Nios II <version> Software Build Tools for Eclipse. On Linux computers (and not running the provided VM), run the executable file <Nios II EDS install path>/bin/eclipse-nios2. You can also invoke Eclipse from Quartus itself (under Tools)
+If the Workspace Launcher dialog box appears, click OK to accept the default workspace location or choose one if you prefer a non-default location.
+On the Window menu, point to Perspective->Open Perspective, and then either click Nios II, or click Other and then click Nios II to ensure you are using the Nios II perspective.
+On the File menu, point to New, and then click Nios II Application and BSP from Template. The Nios II Application and BSP from Template wizard appears.
+Under Target hardware information, next to SOPC Information File name, browse to locate the <design files directory>.
+Select first_nios2_system.sopcinfo and click Open. You return to the Nios II Application and BSP from Template wizard showing current information for the SOPC Information File name and CPU name fields.
+In the Project name box, type hello_world.
+In the Templates list, select Hello World.
+Click Finish.
+The Nios II SBT for Eclipse creates and displays the following new projects in the Project Explorer view, typically on the left side of the window:
+■ hello_world—Your C/C++ application project
+■ hello_world_bsp—A board support package that encapsulates the details of the Nios II system hardware
+
+Compile the Project
+In this section you compile the project to produce an executable software image. For the tutorial design example, you must first adjust the project settings to minimize the memory footprint of the software, because your Nios II hardware system contains only 20 KB of memory.
+Perform the following steps:
+In the Project Explorer view, right-click hello_world_bsp and click Properties.The Properties for hello_world_bsp dialog box appears.
+ Click the Nios II BSP Properties page. The Nios II BSP Properties page contains basic software build settings  (it may take a while).
+ Adjust the following settings to reduce the size of the compiled executable:
+ Turn on Reduced device drivers.
+Turn off Support C++.
+Turn off GPROF support.
+Turn on Small C library.
+Turn off ModelSim only, no hardware support.
+Click OK (Do not click Apply). The BSP regenerates, the Properties dialog box closes, and you return to the Nios II SBT for Eclipse.
+Right click on hello_world_bsp then go to NIOS II->Generate BSP. You have to repeat this step whenever you make a change in the BSP file.
+In the Project Explorer view, right-click the hello_world project and click Build Project.
+The Build Project dialog box appears, and the Nios II SBT for Eclipse begins compiling the project. When compilation completes, a "hello_world build complete" message appears in the Console view. 
+The console provides info on the size of your program (hello_world.elf), which is the total size of the code and the initialised data, plus info on how much memory has been left free for stack and heap.
+
+
+Run the Program on Target Hardware
+In this section you download the program to target hardware and run it. If you are using a windows machine, you should be able to right click on your project and select Run as -> Run Nios II Hardware 
+If you are using Linux or the provided VM then to download the software executable to the target board, perform the following steps:
+If this is the first time running a program on the NIOSII, open a new terminal window and copy the provided bashrc file and save it at ~/.bashrc.
+Open a new terminal and run the command nios2_shell followed by nios2-terminal. This opens the nios2 terminal of the output of the FPGA. The output of running the program will appear in this terminal window.
+Open a new terminal window, run nios2_shell, and then run nios2-download –g <path to quartus project>/software/hello_world/hello_world.elf. This will result in an output appearing on the other terminal window. If you create a new project in eclipse, it will always appear at <path to quartus project>/software/ and contain a .elf file which is what runs on the NIOSII processor.
+If the Run Configurations dialog box appears, verify that Project name and ELF file name contain relevant data, then click Run.
+In the next window that pops up, click OK.,
+Troubleshooting
+In all configurations, you may encounter problems launching your application on the FPGA resulting in:
+[Target Connection]: Connected system ID hash not found on target at expected base address.
+To mitigate this, ensure the most recently compiled .sof file is programmed to your FPGA which should resolve any timestamp and system ID differences. As your NIOS core is time-limited, you may get this message if you have not programmed the device in the last hour. Just reprogramme the device and this may solve the problem. To see the system ID and timestamp values, click the System ID Properties button. If the system ID and/or timestamp report “Not Found”, power cycle the board and reprogram. If this does not resolve the “Not Found” issue, restart eclipse and Quartus and recompile and reprogram the Quartus design. You are advised to run both binary_counter and hello_world examples to familiarise yourselves with the system.
+
+
+If you get the message “Downloading ELF Process failed”, then this may be for a number of reasons. Unfortunately, the tools (even though they are commercial tools, have bugs). Possible steps to solve the problem:
+Make sure that the Programmer window from Quartus is closed.
+You Quartus design may be wrong. Check the connections carefully.
+Restart the board and Eclipse. Try to resynthesize the design and downloaded again to the board.
+If the launch of the program gets suck at “Launching: Flush any cached byte stream chars from input stream”, restart Eclipse and try again.
+If you encounter 
+nios2-terminal: Unable to connect to JTAG UART because another application
+nios2-terminal: is using it (or is using something else which clashes). Please close
+nios2-terminal: the other application and try again.
+Ensure that there are no other connections to the nios2 terminal, close eclipse, power cycle the FPGA, redownload the .sof file using programmer, and then try again.
+
+When the target hardware starts running the program, the Nios II Console view displays character I/O output. 
+2. To disconnect form the FPGA, in the terminal hosting the NIOSII terminal, just press ctrl+C and it will disconnect from the FPGA. You can edit the hello_world.c program in the Nios II SBT for Eclipse text editor and repeat these two steps to witness your changes executing on the target board. If you rerun the program, buffered characters from the previous run session might display in the Console view before the program begins executing.
+The final generated system has an Arithmetic Logic Unit (ALU) that supports fixed-point arithmetic, where all the arithmetic operators are implemented using LUTs. The FPGA on the DE1-SOC board is the Cyclone V SE5CSEMA5F31C6N FPGA. Make sure you keep track of your NIOS settings throughout the coursework. 
+In summary, you have designed a system in Quartus, and then moved on to program the system through Eclipse. If you make any changes in the hardware, you need to regenerate the BSP file. Otherwise, you can create new SW programs targeting the same HW without going back to Quartus.
+Further details on the use of command line instructions  (cli) can be found in the “nios2_cli.pdf” or online here: https://www.intel.com/content/www/us/en/docs/programmable/683689/current/command-line-tools.html
+@ Record the FPGA resources used by your baseline system (i.e. Total logic elements, Total memory bits, Embedded Multiplier 18-bit elements, and Total PLLs).
+
+Task 2: Computing a simple function (Completion time around 1.5 hours)
+Aim:
+Familiarise yourselves with SW development for your system
+Create the skeleton of a system where you can report the execution time of a function
+Appreciate memory limitations and their impact in embedded software development
+Now that you have your system running on the FPGA, you can start using it to evaluate mathematical expressions. 
+From this point forward, it is recommended to create backups of your project. Copying the directory is enough to create a backup. Be sure that if working in a copied directory to update any file paths that may have changed.
+ The first task is to write a function that takes as input a vector x and its length N, and it returns y where y=i=1Nxi+xi3 . The elements of the input vector are single-precision (floats) and are in the range between 0 and 255.
+Starting from the Hello World template, modify the hello_world.c file as follows (just copy-paste the text):
+#include <stdlib.h>
+#include <sys/alt_stdio.h>
+#include <sys/alt_alarm.h>
+#include <sys/times.h>
+#include <alt_types.h>
+#include <system.h>
+#include <stdio.h>
+#include <unistd.h>
+
+// Test case 1
+#define step 5
+#define N 52
+
+// Test case 2
+//#define step 1/8.0
+//#define N 2041
+
+//Test case 3
+//#define step 1/256.0
+//#define N 65281
+
+
+// Generates the vector x and stores it in the memory
+void generateVector(float x[N])
+{
+	int i;
+	x[0] = 0;
+	for (i=1; i<N; i++)
+		x[i] = x[i-1] + step;
+}
+
+float sumVector(float x[], int M)
+{
+	// YOUR CODE GOES HERE
+}
+
+int main()
+{
+  printf("Task 2!\n");
+
+  // Define input vector
+  float x[N];
+
+  // Returned result
+  float y;
+
+  generateVector(x);
+
+  // The following is used for timing
+  clock_t exec_t1, exec_t2;
+
+  exec_t1 = times(NULL); // get system time before starting the process
+  
+  // The code that you want to time goes here
+  y = sumVector(x, N);
+
+  // till here
+  exec_t2 = times(NULL); // get system time after finishing the process
+
+  	
+  y = y/1024.0;
+
+  return 0;
+} 
+
+Complete the code in sumVector() function and compute the results for the three test cases presented in the beginning of this coursework. In order to store the input vector, you need to allocate extra memory. What is the minimum memory that you need to instantiate in your hardware system to be able to store each case (i.e. think about the memory footprint of each input vector). Increase the onchip memory accordingly to accommodate the maximum problem size that you can deal with given the available onchip memory of the device. Do not change the cache parameters in this task.
+NOTE: You should assume that the vector x is stored in your system’s memory prior calling your function. Not all three test cases need to be in the memory of the system at the same time. This assumption applies to the whole project. This emulates a system where the vector x has been produced in full by another task, and our focus is to accelerate the computations that need to be performed on that vector.
+More detailed information about programming NIOS II in EDS can be found in the Embedded Design Handbook: https://www.intel.com/content/www/us/en/docs/programmable/683689/current/introduction-28202.html
+  
+To debug your application running on NIOS II use  instead of . Make use of the perspectives to switch between NIOS II project and debug (Window  Open perspective). You’re encouraged to make use of the available debug tools, e.g. watch and breakpoint, to facilitate the development of the software. 
+J Good to know:
+The printf() command in NIOS by default does not support printing of floating point numbers on the screen in order to reduce the size of the generated code (and save memory resource). As you have only available the on-chip memory to store your program, the result can be shown on the screen by printing an approximate output of the calculated result. Thus, if result is your floating point result, you can divide it by 1024 and provide to the output the integer part only as follows:
+y = y/1024.0;
+printf(“Result: %d \n”,(int) y);
+Please note that the result that we care about is the result that we have computed (i.e. prior to division by 1024). When we increase the memory later on, you will be able to print the result as floating point number.
+J Good to know:
+Since we are interested in accelerating a certain computational process we need to be able to know how long it takes to execute that process. The time required to complete any statement/block of statements can be determined using the following statements in C code:
+
+
+clock_t exec_t1, exec_t2;
+
+exec_t1 = times(NULL); // get system time before starting the process
+*** your C statement(s) here ***
+exec_t2 = times(NULL); // get system time after finishing the process
+
+printf(“T1: %lu\n”, exec_t1);
+printf(“T2: %lu\n”, exec_t2);
+
+printf(“Time (in ?): %lu\n”, exec_t2 – exec_t1);
+
+
+
+which requires the following includes:
+#include <stdlib.h>
+#include <sys/alt_stdio.h>
+#include <sys/alt_alarm.h>
+#include <sys/times.h>
+#include <alt_types.h>
+#include <system.h>
+#include <stdio.h>
+#include <unistd.h>
+It also requires the Interval Time block to be in your system and running in the Hardware Abstraction Layer (HAL). Please refer to the tutorial for more details about this. Please note that the above code may require extra memory that your system may not have. 
+What “time” do you measure? Is it sec, or something else? How does this relate to the configuration of your timer? 
+J Good to know:
+See command nios2-elf-size to get the size of your application. Alternatively, you can look at the .map file, or at the output of the building project process.
+Read the reference about application profiling at the end of this hand-out.
+
+Reflect to the following questions:
+How many resources does your system occupy on the FPGA?
+Is your system able to evaluate the given function for all test cases? If not, why? 
+What is the size of your NIOS II application? How does it correspond to different vector sizes and what is the maximum memory required for each of the test cases? Recall that we instantiated a system with limited on-chip memory, and we had to use the C library with reduced support to reduce the required memory. As such, we cannot print floating point numbers directly.
+Compare your results to Python/Matlab implementation which uses double precision. Do the results agree? If not, why not? Note that we are interested in the result that we calculate and not on the approximated result that we print due to the current memory limitations.
+What is the time required to evaluate the sumVector() function for each test case in seconds? In order to improve the resolution of the time required by sumVector() function, you should call the function 10 times and calculate and report the average time spend in the function.
+In designing HW systems, there is a relationship between the HW resources used by your system and the performance that you get out of it. If we assume that the accuracy is fixed and is not affected by the HW resource allocation, then the performance in your case is the latency of the function sumVector(). The best design is the one that provides the least latency for the least possible resources. Where is your current design in that space?
+
+Task 3: Evaluate a more complex mathematical expression (Completion time around 30 min)
+Aim:
+Increase available on-chip memory
+Use the full C library
+Introduce the actual problem
+By completing Task 2, you should have a good understanding on how an embedded digital system is constructed and how certain design decisions affect its performance. Before proceeding further, we will utilise all the available memory of the FPGA device.
+Go back to your system an increase your on-chip memory to its maximum (around 400KB). Set the Total memory size to 389,120 bytes. This memory should be enough to accommodate the largest vector we want to address. Also, you should untick the box for reduced C support, as there is more memory in the system to store the extra libraries, and we will be also able to print floating point numbers.
+From now on, we will focus on the initial objective of the project, which was to evaluate the following function and design accelerators to improve the design’s performance. 
+f(x) = Σ(0.5*x + x3*cos((x-128)/128))
+As now your system includes access to enough memory, the math.h library can be utilised to help with the evaluation of the cosine function. 
+@ Make use of the math.h library and implement the new mathematical expression in software.
+Run the application for all three test cases and report the performance of your design regarding: HW resources, latency to evaluate the function in seconds, and accuracy of the final result (compared to a MATLAB double precision implementation). Make sure that the generation of the three test cases between Matlab and your software is the same, as we want to investigate any differences due to the calculation of the expression assuming that the input between Matlab and your system is the same.
+Note: For the final assessment, an extra test case will be used which generates N random floats to populate x based on a seed provided during the assessment. This will require the following function and #define to be present in your source code.
+// Test Case 4#define N 2323#define RANDSEED 334
+void generateRandomVector(float x[N]){    int i;    srand(RANDSEED);    for (i=0; i<N; i++)    {        x[i] = ((float) rand()/ (float) RAND_MAX) * MAXVAL;    }}
+Task 4: Add multiplier support (Completion time around 30 min)
+Aim:
+Understand the difference between emulating an operation and using dedicating hardware block.
+Investigate how hardware multiplier support improves performance and impacts resources and code size.
+When you first created your NIOS II system, it had no multiplication support, which means that the floating-point multiplications have been emulated in software at the expense of fixed-point addition operations.
+Now you’re going to add hardware support for multiplication. NIOS II provides three possibilities: Logic Elements, 3 16-bit multipliers and 1 32-bit multiplier .
+
+LUT-based multipliers are often used on FPGAs due to the flexibility of their word-length configuration, allowing faster multiplications at the expense of computing fewer bits than generic fixed word-length hard-multipliers. In the case of floating-point arithmetic the significand (also known as mantissa) has 23 bits, which is long enough to benefit from the performance of dedicated embedded multipliers.
+So far you have been using floating-point arithmetic with non-floating-point units on your system. The software has been emulating these functions relying on a basic ALU implemented with generic LUTs (FPGA’s basic logic elements). The FPGA that you are using, Cyclone V, has dedicated hardware multiplier blocks that can be used to do fixed-point multiplications faster. Please note that you just add support for integer multiplication and the floating-point arithmetic has to be emulated again (signs, exponents, rounding and packing).
+@ In order to improve the performance of your system, we are going to add HW support for fixed-point multiplications.
+Go back to the Platform Designer and edit the cpu. Select the 3 16-bit multipliers from the drop-down menu in Platform Designer. A summary of the impact to the performance of the system is showing in the summary table below the selection. Check how the other options impact the performance. Update the system and compare the new performance results with the previous version of your system for all three test cases. Report the execution time (i.e. latency) of the function that computes F(x), resource utilisation, code size, and error between the result of your system and the reference double precision Matlab/Python implementation for each test case.
+Assuming that maximum performance is required by the application, which design choice should be selected? Justify your choice. 
+
+
+
+Task 5: Add custom instruction to NIOS (Completion time around 2 hours)
+Aim:
+To understand how you can use available Altera IP cores in your design.
+To understand how to simulate and verify the functionality of a design.
+To familiarise yourselves with the process of adding an Avalon bus wrapper around your design and integrate it with the NIOS II system as a custom instruction,
+To understand how you can use the new custom instruction in your SW.
+
+
+NIOS II custom instructions
+NIOS II supports different types of custom instructions depending on the type of hardware block connected to it. The following diagram shows how the custom logic is interfaced with the rest of the system. The diagram below shows how custom logic is interfaced to the NIOS II ALU, where the next diagram shows the available types of custom instructions. 
+
+
+
+The supported custom instructions/logic blocks are: 
+Combinational: single clock cycle logic block; In this case, your HW block should be able to produce a valid results within one clock cycle.
+Multi-cycle: fixed or variable number of clock cycles to complete execution;
+Extended: block capable of performing multiple operations (e.g. ALU); In this case, your block has an extra input that specifies the operation to be performed.
+Internal register file: logic blocks that access internal register files for I/O (e.g. Multiply-Accumulate unit);
+External interface: logic blocks that interface to logic outside of the Nios II processor’s data-path (not shown).
+
+A high-level view of the steps that you need to follow in order to create your own custom instruction component is shown below:
+Create a block diagram / Verilog / VHDL with your circuit;
+If you’re doing block diagram, generate Verilog from it;
+Simulate your block using Modelsim or one of the other tools. If it performs as intended move on, otherwise revise your circuit design;
+Add the new block to your system as a new component;
+Synthesise your system;
+Get FPGA resources, latency and throughput;
+Add the “software interface” for your new block.
+
+Please follow the steps below to achieve the above
+
+Add custom instruction tutorial
+In order to familiarise yourself with the process of adding a custom instruction to your existing system, the following section provides a tutorial on how to map a simple one-cycle fixed point multiplier to your system as a custom instruction. This tutorial should be followed in parallel with https://www.intel.com/content/www/us/en/docs/programmable/683242/current/nios-ii-custom-instruction-overview.html.
+Firstly, we need to identify the type of the custom instruction. As we need to implement a single one-cycle integer multiplier, the Combinatorial type is appropriate.
+ Type
+Application
+Hardware ports
+Combinational
+Single Clock cycle custom logic blocks
+dataa[31:0]
+datab[31:0]
+result[31:0]
+
+Design the module
+Create a new project in Quartus (you can use the “New Project Wizard”, and insert a new symbol from the IP Catalog tab. Name your IP mul (note that the provided testbench file testbench_1.v assumes that the file that you want to simulate is called mul). You should select the LPM_MULT ip (this is an integer multiplier). Configure your multiplier to take two 32-bit inputs.  Select your multiplier to be unsigned and without any pipeline stages (no clock). You can use any available implementation under the “Multiplication Type”. This will produce a verilog module. 
+In our setting, we need to select to produce a 32bit output. Thus, you need to first instantiate a wrapper (mul_top) module, which contains the mul generated by the IP Catalog, and only provides to the output the LSB 32-bits.
+An example is shown below:
+module mul_top 
+  (
+   input [31:0]  dataa,
+   input [31:0]  datab,
+   output [31:0]  result
+   );
+    
+  wire [63:0] temp_result;
+    
+  mul mul
+    ( 
+      .dataa(dataa),
+      .datab(datab),
+      .result(temp_result)
+      );
+		
+ assign result = temp_result[31:0];  // Select the 32 LSBs for the output
+ 
+endmodule // mul_top 
+
+
+
+Verify its functionality
+After having instantiated your IP code, add input and output ports and simulate it to verify its functionality. The simulation must be done through Questa (or ModelSim). Please note that you have kept only part of the result (32 LSBs).
+Questa (Intel’s Modelsim) is the application where you can run a simulation of your design before deploying into the FPGA, saving development time.
+Download from blackboard the file testbench_1.v which contains a module tb. 
+Press Assignments->Settings, then go to EDA Tool Settings
+For Tool Type->Simulation select Questa Intel FPGA under Tool Name.
+Then go to EDA Tool Settings->Simulation and set Tool name to Questa Intel FPGA.
+Under NativeLink settings, select Compile test bench: and then press Test Benches
+In the window that pops up, press New
+Pick a name for test bench name, and write tb for the top level module in test bench.
+For File Name navigate to the provided testbench_1.v (downloaded from blackboard), press Add then OK and then OK again and then OK again.
+In an editor, open testbench_1.v and modify it following the provided comments in the file to work as your testbench.
+Select Project->Add/Remove Files in Project... and add testbench_1.v and press OK
+Run Analysis and Synthesis (there is no need to run place and route)
+Select Tools->Run Simulation Tool->RTL Simulation. A Questa window will open, and select wave tab to see the waveform output.
+The testbench_1.v file is a template that can be used to develop more complex testbenches for later designs. It works exactly like a Verilog file that can be used to specify inputs, outputs and clocks for the module being tested.
+Add the module to the existing system
+In this section, you will learn how to add an Avalon bus wrapper around your module, and make it available to the Platform Designer for integration with the rest of the system. 
+Switch back to the project containing the NIOS II processing system. Open your system in Platform Designer and click on New Component in the IP Catalog window. Provide the name of your component (you may want to call it mul), and in the Files tab add under Synthesis Files the vhdl or Verilog file that you have created for your component (i.e. mul_top.v). Click on “Analyze Synthesis Files”. The Top Level Module will be populated. Up to this point, your block (i.e. design) does not have an Avalon interface. It has only the bare minimum signals that it needs to function. 
+To set up the custom instruction interfaces, follow these steps:
+Click on the Signals & Interfaces tab.
+From Templates select the appropriate “Custom Instruction Slave” interface.
+For Clock Cycles, you need to type 0 for a variable multicycle type custom instruction, and otherwise type the number of clock cycles your custom instruction logic requires. In our case we need to type 0, but this has already been picked up by the tool.
+In the general case, for Clock Cycle Type, type Variable for a variable multicycle type custom instruction, Multicycle for a fixed multicycle type custom instruction, or Combinatorial for a combinational type custom instruction.
+For Operands, type the number of operands for your custom instruction (i.e. 2)
+For each port, change the Signal Type to the appropriate signal for that port (check the figure above)
+If your custom instruction logic requires additional interfaces, either to the Avalon-MM fabric or outside the Platform Designer system, you can specify the additional interfaces in the Interfaces tab. Our example does not require additional interfaces.
+Click Finish and Save. In the Platform Designer IP Catalog Library, under Project, select your custom module and click add to add the new instruction to the Platform Designer system. In the Connections panel, connect the new component component’s nios_custom_instruction_slave interface to the cpu component’s custom_instruction_master interface. You have now connected the new block to the processor through an Avalon bus interface.
+Reassign the base addresses, generate the new NIOS system, return to Quartus, add the custom instruction’s directory through the Projects -> Add/Remove Files in Project under Project Libraries, and then recompile the whole design in Quartus. 
+Check whether the new design meets timing. 
+So far, you have designed a new IP, you have verified its functionality in isolation, and you have extended your hardware processor system by introducing this IP and interface it through a nios_custom_instruction_slave interface to the CPU. The next step is to be able to access that hardware component from SW.
+Accessing the Custom Instruction from Software
+Adding a custom instruction to a Nios II processor results in a significant change to the system. In this section, you create and build a new software project using the Nios II software build flow, and run the software that accesses the custom instruction. 
+Create a new software project using the Hello World template for your system and name it hello_world_custom_instr. After the file generation has been finished, click on hello_world_custom_instr_bsp and open the system.h file. Verify that a custom instruction macro has been generated as below. 
+#define ALT_CI_MUL_0(A,B) __builtin_custom_inii(ALT_CI_MUL_0_N,(A),(B))
+#define ALT_CI_MUL_0_N 0x0
+The first line describes the custom instruction (input arguments and return values) and the associated custom instruction built-in function:
+(https://www.intel.com/content/www/us/en/docs/programmable/683242/current/custom-instruction-software-interface.html ). The second line provides the opcode for your custom instruction, and you can verify that this is the opcode assigned to your instruction by Platform Designer. 
+Without making any changed to the template, build and run the application on the actual hardware to verify its functionality.
+Change the code of hello_world.c file as follows and verify its functionality.
+
+#include <system.h>
+#include <stdio.h>
+
+
+int main()
+{
+  printf("Hello from Nios II!\n");
+
+  int a, b, c, d;
+  a = 2;
+  b = 4;
+  c = a*b;
+  printf("Multiplication result: %d\n", c);
+
+  d = ALT_CI_MUL_0(a,b);
+  printf("Multiplication result from custom instr: %d", d);
+
+  return 0;
+}
+Please note that you need to include the system.h file in order to access the custom instruction.
+These concludes the task on how you can instantiate a new hardware block in your system and create a new custom instruction to allow the NIOS processor to access it. More detailed information can be found in:
+  https://www.intel.com/content/www/us/en/docs/programmable/683242/current/nios-ii-custom-instruction-overview.html
+
+ You can find more information on Intel’s support on floating point IP cores and the necessary conversions on the following documents:
+https://www.intel.com/content/www/us/en/docs/programmable/683750/23-1/about-floating-point-ip-cores.html 
+https://www.intel.com/content/www/us/en/programmable/quartushelp/17.0/reference/glossary/def_megafun.htm
+https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://www.intel.com/programmable/technical-pdfs/683102.pdf&ved=2ahUKEwj4_IG0teKRAxWRUEEAHfpqOJkQFnoECCAQAQ&usg=AOvVaw3Zb2m-56iMRzZ29fESdKif
+
+Task 6: Add floating-point cores NIOS (Completion time around 2 hours)
+Aim:
+To understand the different custom instruction types (combinational, multicycle)
+To design appropriate floating-point cores to support the calculation of the given expression.
+Floating-Point (Backgournd)
+In many applications (as in ours) there is a requirement to process data with large dynamic range and represent data that takes values from the real number set. A possible way to represent the above numbers in a physical system is to use the “universally adopted” IEEE-754 floating-point standard.
+The intention of the IEEE Standard for Binary Floating-Point Arithmetic, also known as IEEE-754, is to specify floating-point formats, arithmetic, conversions and exceptions. Floating-point numbers have three components: sign, significand and exponent, generically given by the following equation:
+x = ±significand x 2exponent
+The sign is represented with one bit indicating whether the number is positive (0) or negative (1). The significand represents the fractional part of the number, in a fixed-point format. The exponent indicates the magnitude of the number, and has an embedded biased value. The number of bits of the significand determines its precision. In the IEEE standard, the significand is a real number in the interval [1; 2[. The integer component, value 1 is not included, so the significand contains only the fractional part of the floating-point value. The standard defines two formats: single precision (32-bit) and double precision (64-bit). In this coursework only the single precision format is considered. This format uses 8 bits to represent the exponent and 23 bits + 1 hidden bit for the significand, as shown in the figure below.
+sign
+exponent
+significand
+1 bit
+8 bits
+23 bits
+
+Some values encoded using single precision floating-point representation:
+Exponent
+Significand
+Value
+0
+0
+±0
+0
+Not 0
+±2-126 x(0.significand) [denormal]
+1-254
+-
+±2 (exponent – 127) x(1.significand)
+255
+0
+±¥
+255
+Not 0
+Not a Number
+
+Example: p = 3.1415926535897932384626433832795
+To be between 1 and 2 we need to divide it by two, which means the exponent needs to be 127 + 1.
+With 23 bits left we represent digits from the left to the right of 0.57079632679489661923132169163975
+sign
+exponent
+significand
+0
+10000000
+10010010000111111011011
+
+So far there’s no support for floating-point arithmetic in NIOS II. All your floating point operations are emulated through SW (even though the multiplications are now mapped to actual hardware multipliers). Now you are going to add floating-point adder, subtraction and multiplier hardware, so that the elementary arithmetic operations used by the function can be performed faster, thereby reducing the execution time, in the expense of dedicating more FPGA resources. 
+In order to implement such functionality in dedicated hardware you’ll need to design a hardware block that performs this functionality, attach it to a bus in the system so the processor can access it, and then create a custom instruction so you can access it from your software.
+To design the hardware block in Quartus you can use schematic capture, Verilog or VHDL. Before you attach your HW block to the NIOS system, you are advised to make a functional simulation of your hardware block to verify that it works correctly. You can do simulations using Questa, Modelsim or Active-HDL. After that, you will add it to the system using Platform Designer (IP Catalog panelàProjectàNew Component). 
+J Good to know (and important)
+We can add Floating-Point Hardware in our system in two different ways. One way is to go through the Platform Designer, add Floating-Point Hardware from the IP Catalog to your system, and then connect it to the Custom Instruction Master port on your processor. In this case the floating-point hardware will automatically be mapped to a custom instruction and all floating-point arithmetic in software will be using this hardware block. 
+However, our ultimate objective is to learn how to design a new custom instruction in general in order to be able to design future acceleration units. As such, the use of the Floating-Point Hardware in Platform Designer is not permitted as a design choice in this project. However, we will use the Floating Point IPs provided in the IP Catalog but treated them as general IPs that need to be interfaced with our CPU, and dealing with then as custom instructions.
+Having gone through the previous section, you should be familiar with the process of adding custom instructions to a NIOS system.  The evaluation of the target function involves heavy use of floating-point addition, subtraction and multiplication, which at the moment are emulated through SW. As the target is to accelerate the evaluation of the function, the aim of this section is to map this functionality to HW. 
+@ Implement the custom logic blocks for floating-point adder, subtracter (or a single add/sub unit) and multiplier operations in order to support hardware acceleration of the above operations. Design the HW blocks, verify them, and then integrate them to the rest of the system. 
+Note: You should not design your own floating-point adder/subtracter/multiplier, but you should instantiate one from Quartus library (Important: You need to use the FP_FUNCTIONS Intel FPGA IP). When you configure the IP, you need to consider how it will be interfaced with the rest of the system, as well as its latency, having in mind that we want to produce a design that calculates the above expression as fast as possible. Your hardware architecture should look like this:
+
+
+
+2383155927100FP_MUL
+0FP_MUL
+916305403225NIOS
+00NIOS
+2388870390525FP_ADD/SUB
+0FP_ADD/SUB
+54800512065000
+Which type of custom instruction did you choose (i.e. Combinatorial, Multi-cycle,…)? Justify your choice.
+Evaluate the performance of your new system when we target the original function i.e.
+F(x) = Σ(0.5*x + x3*cos((x-128)/128))
+What is the FPGA resources allocated for the new blocks? What is the throughput and latency of the new HW blocks? How the latency of your HW block impacts the overall performance of the system? Which operations in the targeted function will benefit from these HW blocks?
+Compare the new performance results with the best performance achieved from the previous version of your system for all three test cases, when the same function as above was targeted (Task 4). Report the execution time (i.e. latency) of the function that computes F(x), resource utilisation, code size, and error between the result of your system and the reference double precision Matlab implementation for each test case.
+Profile the time that is spent in each operations (add/sub, mul, cos()). Investigate how cos() is implemented in your system. Does cos() take advantage of the new blocks that support floating point operations?
+In the case where you have chosen to use a pipelined version of the above blocks, please comment on how well the pipeline is utilised? Justify your answers.
+
+i VERIFICATION: GENERATING A SYSTEM, SYNTHESISING AND TESTING IT (A.K.A. TRIAL-AND-ERROR) IS TIME CONSUMING. YOU SHOULD VERIFY YOUR DESIGN THROUGH SIMULATION BEFORE TRYING RUNNING IT ON THE FPGA. THIS IS HOW REAL-LIFE SYSTEMS ARE DESIGNED, AND YOU SHOULD FOLLOW THIS PRACTICE THROUGHOUT THE COURSEWORK.
+
+i After generating the BSP, verify that you have the macros for your custom instruction in the file system.h. Check if the arguments and return value of __builtin_custom_?n?? agree (see manual Section 3.2). If not, create a new macro in your source file. DO NOT EDIT system.h! Please note that your custom instruction (that supports floats) should be of the form: __builtin_custom_fnff
+
+Hints:
+Organize your hardware blocks in a subfolder named “./IP” in your project folder;
+Create a new block diagram file and place your floating-point units there along with the necessary control logic. Remember to use labels in your connections, this will help to identify them during simulation;
+Pay attention to the interface signals of your block. They’ll be different for different types of custom instructions; Check the documentation to see what signals are required for each type of custom instruction.
+The floating-point arithmetic units are added to your block diagram via the IP Catalog tab. Note that you should make use of the FP_FUNCTIONS Intel FPGA cores as they are newer than the standard ALTFP_ADD_SUB, and ALTFP_MUL cores (which may need a license as well).
+Use MegaWizard to create your other blocks. Add them to your design, as Platform Designer will only add the top HDL file to your design. DO NOT add your top block of your design to the project, only the sub-blocks;
+If you’re not familiar with either Verilog or VHDL, do your design using block diagram and then convert it to Verilog using File->Create/Update->Create HDL File From Current File. While creating a new component in Platform Designer it will ask for a VHDL or Verilog file. Remember to create a new one, and update your component, every time you update the block diagram. Platform Designer will create a copy of your HDL file (top of your block) when you create the component to a different location. Updating your HDL file won’t update your block in the system. You have to manually copy it and replace it or regenerate the component; 
+Replace all floating-point arithmetic operands in your application with calls to your custom application. E.g. (float)x = (float)a * (float)b; è x = cust_fp_mult(a, b); .
+
+!Debug:
+In case you don’t read the expected value from your custom instruction, place a constant at the output of your hardware unit and verify if that value is read by the instruction.
+Whenever you introduce changes in your design, use different constant inputs so you can verify that your design is being updated. Platform Designer stores a copy of your top HDL file in a different location than your ./ip folder. It is a good idea to have the connections correct in that design before adding it to the Platform Designer. 
+Use the simulation to adjust the correct number of clock cycles required to complete the operation.
+If you fail to have any output from your instruction at all, try to implement a simple one (combinatorial) to verify that you are calling the custom instruction correctly from your software. E.g. load a constant value from it, negate one of the outputs, OR/AND/XOR your inputs, etc.
+
+Task 7: Add Dedicated Hardware Block to compute the inner part of the arithmetic expression (Completion time around 10 hours)
+
+i Please note that Tasks 7 and 8 must be completed as individual work, which should be described in Report 3.
+Aim:
+Understand how to model fixed-point number representations and characterise the error that it introduces to the system
+Optimise the CORDIC architecture based on problem specifications. 
+Design and integrate a complex block in a NIOS system
+Design a control-heavy architecture
+So far, you’ve seen that you can improve the performance of your system by implementing some of the most computationally demanding operations in hardware. In the present scenario you’re going to extend your previous implementation and map the whole arithmetic expression as a custom instruction in your system. At the end of this task, your system should be able to calculate (2) below with a single call to the custom instruction f(x), with the minimum latency.
+@ Add (2) as a custom instruction to your system:
+f(x) = 0.5*x + x3*cos((x-128)/128)                               (2)
+3046554949284Block that calculates (2)
+00Block that calculates (2)
+1534160899160NIOS
+00NIOS
+138112563055500by mapping all operations to hardware including the implementation of a CORDIC block to implement cos(.)instead of using the software implementation from math.h. Your final architecture of Task 7 should look like this:
+
+The aim is to produce a system that minimises the time that it takes to compute (2) (i.e. its latency). Please note that in this task, we only aim to minimise the time to compute (2) for a single x value. There are many design choices that may lead to the same minimum latency, but out of those we are interested in the one with the smallest resource footprint. 
+At this point, we will decouple the development of the custom instruction from the NIOS system you have built so far. 
+The aim is to design and build an IP that takes as in input a single-precision floating point number x , and computes f(x) through (2) using single-precision number format, except for the cos() evaluation where fixed-point arithmetic will be used, which needs to be computed through the CORDIC algorithm. 
+CORDIC block specifications
+You need to implement a fixed-point based CORDIC block to calculate the cos(x). Optimise your CORDIC block for the computation of cos(x) by selecting the number of CORDIC stages and the wordlength of your fixed-point numbers, such as the mean squared error e between the CORDIC result and the one produced by MATLAB under single precision is less than 2.4x10-11 with a confidence level of 95%. You should assume an input x is under single precision format and follows a uniform distribution in the range [-1, 1] (i.e. the possible range of input given our problem). 
+You should design your block in Quartus, use Questa/Modelsim to verify its functionality and performance (number of cycles), and check whether it meets timing after place and route. Please note that in your work, you need to design a CORDIC block based on fixed-point format. Please note that you should target the initial clock frequency (50MHz).
+For better understanding of the impact of certain design choices as well as for verification reasons, you need to implement the above custom instruction in two steps:
+Step 1
+Design your CORDIC architecture such as the latency in evaluating (2) is minimised. Check the accuracy that is achieved when compared to a double precision SW version (you can use Matlab for this test). 
+(Hint: you should use the Monte Carlo simulation technique to determine the mean square error of your design. In Matlab, you can use the Fixed-point numeric object, “fi”, to represent the fixed-point variables.)
+i Please note that a look-up table-based implementation is not allowed for the implementation of the 
+cos(.) function, or the use of an existing IP block that performs this function.
+Comment on the architecture of your CORDIC HW block. How many iterations does it support and how many HW CORDIC stages does it have? How did you select the number of stages? How many bits do you use for the fixed-point representation in CORDIC? How do they impact the performance of the function evaluation (i.e. accuracy and latency) for the three test cases?
+Step 2
+Our objective in this task is to integrate the CORDIC IP with the rest of the blocks, and have it appeared as a single custom instruction. As an intermediate step you need to first expose CORDIC as a single custom instruction alongside the rest of the blocks, so you can:
+Verify their functionality/integration.
+Record the performance of your system under a set up where your NIOS has at least the three accelerators as shown in the figure below, and NIOS schedules the computations across these accelerators.
+Record the time spent for the whole computation, and the time spend per accelerator. Do the recorded times match your expectations given the latency if these blocks?
+1167765577850002793365618490FP_ADD/SUB
+0FP_ADD/SUB
+27876501097915FP_MUL
+0FP_MUL
+27774901577975COS
+0COS
+1301750812165NIOS
+00NIOS
+
+
+
+
+Step 3
+In the previous step, all the scheduling of the computations took place through NIOS. In a sense, NIOS acted as a glorified FSM and utilised the memory of the system to store intermediate data across calls to the accelerators. However, the need to involve the CPU in every accelerator call has introduced overheads. The aim in step 3 is to reduce these overheads by moving the control away from NIOS and integrate all the accelerators under a single custom instruction (final architecture of Task 7). Again, your architecture should use the minimum resources possible i.e. instantiate each accelerator only once and use an FSM and a register file to control the accelerators and store intermediate values.
+For both systems (step 2 and step 3), describe how data is passed in your new HW block. Comment on its performance vs resource utilisation when it is integrated in your NIOS system. Comment on the utilisation of the blocks (i.e. resources) used in your custom instruction when it is integrated in your NIOS system. Compare the performance of your final design assuming that it can be called as soon as it has completed the calculations of the previous input, and how it performs when it is integrated with NIOS. Is there a discrepancy, and if yes comment on the reasons.
+This is a good time to consider the ideal performance of your system under the assumption that you do not change the memory subsystem. What would be the ideal execution time for test case 3 if you assume that the whole evaluation of f(x) can be done in the same cycle? (hint: You can use a combinational dummy custom instruction to emulate that and record the time). Do your recorded results make sense?
+Report the execution time (i.e. latency) of the function that computes F(x), resource utilisation, and error between the result of your system and the reference double precision Matlab implementation for each test case. 
+
+Task 8: Add Dedicated Hardware Block to compute the arithmetic expression (Completion time from 30min to …)
+Aim:
+Be able to desing throughput oriented circuits.
+Appreciate the trade-off between resource and performance
+Throughout this coursework you have been accelerating part of your software by desiging dedicated hardware blocks in the hardware that accelerate part of the required computations. (Hopefully) your application has been computing the targeted arithmetic function faster through all the extra hardware support. 
+@ The aim of this final task is to map the whole function in hardware and reduce the execution time as much as you can. This is an open-ended task that you are free to use any possible design choice and architecture. 
+In contrast to Task 7, where the aim was to minimize the latency of the inner function f(x), the goal here is to minimise the latency of the outer function F(x). Please note that the design decision on the CORDIC architetcure for Task 7, may not be the best one for Task 8.
+Some design Hints: 
+At the moment, your computation is split into two parts. The part that computes (2) above and the part that does the accumulation. In order to remove the overheads of the processor, you need to add a floating-point adder/accumulator to perform the overall sum in hardware. In this way you can speed up the computation further.
+Think whether you have taken full use of the pipeline capabilities of your hardware blocks. How often you can push a new value of the x vector to your custom instruction? How can you increase its throughput so you can reduce the latency in calculating (2) over the whole input vector? Do not forget that your NIOS processor blocks after the execution of a custom instrunction and waits for the assertion of the done signal to retrieve the result and being able to move to the next instruction. State any assumptions that you may have in your implementation.
+Comment on the architecture of your final system and on the control and data flow of your design. Describe how and what data is passed in your new HW block. Comment on its pipeline’s utilisation.
+Compare the new performance results with the best performance achieved from the previous version of your system for all three test cases. Report the execution time (i.e. latency) of the function that computes F(x), resource utilisation, code size, and error between the result of your system and the reference double precision Matlab implementation for each test case.
+
+
+
+Marking scheme
+The distribution of marks to the tasks is shown below. Please note that the marking will take into consideration your design approach, your achieved results, as well as the quality of the submitted report. 
+Task
+Mark
+Tasks: 1 + 2 
+0 %
+Task 3 Evaluate a More Complex Mathematical Expression
+5 %
+Task 4: Add Multiplier Support
+Task 5 Add custom instruction to NIOS
+Task 6: Add floating-point cores NIOS
+Task 7: Add dedicated Hardware Block to compute the inner part of the Arithmetic Expression
+Task 8: Add dedicated Hardware Block to compute the Arithmetic Expression
+5 %
+5%
+10%
+35%
+10%
+Final Presentation + Interview
+Test (probably wiseflow format)
+15%
+15%
+
+Note: Task 7, Task 8, the final presentation and interview, and the test are individual assessments.
+
+Coursework Submission
+Proposed work schedule and Intermediate deliverables deadlines
+Schedule
+Term Week
+Tasks
+Week starting on:
+Deliverable deadline
+(end of week, Friday@16:00)
+2
+Task 1: NIOS II Setup	
+Task 2: Computing a simple function	
+12/1
+
+3
+Task 3: Evaluate a more complex mathematical expression
+Task 4: Add multiplier support	
+19/1
+Report 1 (Tasks:1-2)
+4
+Task 5: Add custom instruction to NIOS
+26/1
+
+5
+Task 6: Add floating-point cores to NIOS
+2/2
+
+6
+Task 7: Add Dedicated Hardware Block to Compute the inner part of the Arithmetic Expression
+9/2
+Report 2
+(Tasks: 3-6)
+7
+
+16/2
+
+8
+Task 8: Add Dedicated Hardware Block to Compute the Arithmetic Expression
+23/2
+
+9
+
+2/3
+
+10
+
+9/3
+
+11
+Examination Week 
+The oral examination will take place at some time in the last week of the term, where the wiseflow test will take place at the module’s slot (already in your timetable).
+
+16/3
+Report 3 and code (Monday 16th @ 16:00)
+(Tasks: 7-8)
+
+Out of the three reports, only Reports 2 and 3 are assessed. Report 1 should be submitted for feedback. If you are late in submitting your report, the usual College penalty on late submission is applied. In the case of delaying Report 1, a 10% penalty will be applied on the final overall mark. A meaningful Report 1 should be submitted (i.e. submitting a blank page with your name only as Report 1 does not count as a “meaningful” report.).
+Reports - Marking
+You need to submit three reports on your project (Report 1 and Report 2 as a group, Report 3 as individuals) according to the schedule above.
+The reports should contain the following:
+a) Answers to any questions raised in the project hand-out, e.g. performance, FPGA resources, etc.
+b) Any related design in a block diagram.
+c) A detailed justification of the design choices that you have made.
+d) Any limitations of your designs.
+e) For the last report, an elaboration of what you would have done differently if you were doing the project from the beginning (for example you may have found that you took a wrong design decision but it is too late to go back and fix it. It is important to elaborate on this (why you believe it is a wrong decision and what would be a better one).
+Please note that special attention will be given on the justification of your design choices and how you have approached the problem. So please provide enough details around these issues.
+Also note that the report should not contain any background info like literature review on NIOS. However, the report should provide information on why you have chosen specific algorithms for the calculation of the arithmetic expression.
+Below I have listed some general points and good practices on the report writing. Please note that the list below is not exhaustive.
+General points
+The report should be in pdf format, and you should submit your code only for the final report. Provide names and group id on the first page of your report.
+
+I would suggest using overleaf and a double-column format.
+
+Describe clearly the aim of the report and its task
+Provide discussion on every result that you include. Does it make sense? What conclusions you can draw from the reported results?
+Be precise when you try to justify the results. Do not just use phrases like “… good enough..”, “..very slow…”
+Avoid using screenshots that do not have any useful info.
+Do not provide a description of the tutorial that you followed. If there is a specific step that gave you trouble or you think is important to mention, then do just that.
+Have a conclusion section (task level/report). What did you see? (do not summarize what you did)
+Pay attention to the structure of the report.
+Think about adding graphs to make your points more clear.
+Resources: Your system in the FPGA, and your Program (memory occupied)
+Report 1 – Good points to include
+Discuss your design (elements that you have included)
+Discuss about resource utilization and timing analysis results
+Discuss the size of your program, and the memory footprint that you expect your program to need. Do you use dynamic memory allocation? When does the process fail? Perform an offline analysis on the memory requirement of the various test cases to see whether you can fit the data in your system.
+Discuss your results for the various test cases, and how they compare to Matlab/Python implementation. 
+Discuss the performance of the system (latency)
+Present your results using graphs and tables. It is better to argue your point in this way. 
+page limit: 2 pages (This is a limit, not a target 😊 ). 
+Report 2 - Good points to include
+Discuss the design choices behind the selection of the configuration for the various cores that you have used. 
+Discuss the time that is spend in each operation (i.e. profile the execution of the system)
+Discuss the implementation of cos function. Consider how it has been implemented in math.h library in C. Consider other versions of cos like cosf. Consider the Taylor expansion for the cos evaluation. What is the trade-off between number of terms and latency/accuracy? Consider a lookup implementation.
+Always include a performance vs recourses graph in order to compare your various designs (present and past). Given that the aim is the same across the various tasks, it is interesting to see how the design of your system (moving functionality to dedicated HW) affects the performance and resource utilization of the system. 
+page limit: 4 pages
+
+Report 3 - Good points to include
+Comparison to previous implementations
+High level view diagram (block diagram) of your design and clear indication on how you call your IP from NIOS (i.e. include main loop for the computation)
+Elaboration on the selection of the latency, achieved performance, area/resources, achieved error
+Elaboration on your CORDIC architecture and its justification for Task 7 and for Task 8.
+Elaboration on the design decisions behind the CORDIC architecture for achieving the required accuracy level.
+Elaboration on the predicted latency of the block used in isolation, and how it is utilized once integrated with the rest of the system.
+Elaboration on the final adder to complete the whole design (function evaluation in HW)
+page limit: 4
+
+Please note that any pages beyond the page limit will not be considered. The page limit only refers to the body of the report (excludes the first page if it is just the title and names, and any references)
+
+Code 
+Each group needs to upload the source files of their project for the most advanced design, at the end of the project.
+You only need to submit the most advanced working design (task). Please include the following extensions:
+.qpf - quartus project
+.qsf - quartus settings
+.sdc - timing constraints
+.sopcinfo - system info
+.qsys - system specification
+.vhd - vhdl source files
+.v - verilog source files
+.qip - megawizard component
+.tcl - script
+.bdf - block diagrams
+.bsf - symbols
+.do - modelsim macro
+.mpf - modelsim project
+.c - C source files
+.h - C include files
+.bsp - bsp settings
+.map
+.hex
+.bin
+.cproject/.project - eclipse project defs
+
+ 
+You can follow the instructions below to make a .ZIP file with the deliverables:
+ 
+1. Make a copy of your work containing only the designs/software you want to submit.
+2. start command line "cmd";
+3. change drive and directory to be your DSD folder e.g. "e:" "cd /dsd14/";
+4. execute the following command. It will copy your sources into a zip file;
+
+zip dsd -rq . -i "*.h" "*.c" "*.bsp" "*.map" "*.qsf" "*.qpf" "*.sdc" "*.sopcinfo" "*.qsys" "*.vhd" "*.v" "*.qip" "*.tcl" "*.bdf" "*.bsf" "*.do" "*.mpf" "*.*project" "*.bin" "*.hex"
+
+ 5. verify the zip file contains all the source files you want to submit for evaluation;
+6. upload the file.
+
+APPENDIX
+Troubleshooting
+Workarounds for the most common problems that students have faced in the past can be found in the DSD FAQ.doc document.
+
+Application Profiling
+In the quest to accelerate complex applications, it may not be obvious which instructions take most of the processor’s time. To measure the performance of parts of your application you can make use of an external profiler or measure the time require. Altera provides an application note specific on this subject. You can find it here:
+https://www.intel.com/content/www/us/en/docs/programmable/683689/current/profiling-systems.html
+
+Alternatives to NIOS II/Altera
+Embedded systems with soft/hard processors and reconfigurable logic are common. Similar to Altera (NIOS II) there are alternatives, namely Zynq from Xilinx. The Zynq system has a hard processor occupying a region of the device, which cannot be used for reconfigurable logic, but on the other hand the processor has enough computational power to run Ubuntu on it.
+Here are screenshots of the development environments for hardware (XPS) and software (SDK). You’ll find them similar to the tools you’re using in this coursework.
+
+XPS
+
+
+SDK 
+
+
+Remote Compilation
+(Please reach out to me before going down this route)
+Design compilation can require quite a few resources from your computer, and if you have a slow computer or are using a VM, you may want to compile your project remotely (for reference, both the server and Level 5 computers take roughly 5 minutes to compile designs). The teaching server, ee-mill1, has Quartus 18.1 installed. To access this server, follow the instructions in the link below:
+https://wiki.imperial.ac.uk/pages/viewpage.action?pageId=250302869
+Once you have setup a connection, you need to do the following steps to run Quartus:
+In the SSH shell command line, run: source /usr/local/altera/18.1/settings64.sh
+Then to open Quartus, run: quartus
+(You can add the first command to your .bashrc file)
+This will open Quartus, which you can use to compile projects. If you plan to solely use the servers for compilation, it is recommended to keep all the project files here and only copy over the .sof and .sopcinfo files for programming the board and software development respectively. If you wish to move a whole project to the server, you are recommended to zip the project using the command in the Code appendix section.
+To move files, if you are using MobaXterm, you can use the file explorer on the left, as shown below:
+
+31775530835
+For mac and linux users, you can use the scp command, like so:
+To server: scp <local-file> <username>@ee-mill1.ee.ic.ac.uk:<remote-destination>
+From server: scp <username>@ee-mill1.ee.ic.ac.uk:<remote-file> <local-destination>
+
+
+
+*** end of document ***
+
+Version Table
+Version
+Date
+Notes
+V6.1
+Dec 2025
+Task 7 has been refined to explicitly require the design of three distinct architectures including one that is control heavy.
+All references to external material have been updated.
+Marking scheme has been updated for Task 7 to reflect the distribution of effort in the task.
+V6.0
+Dec 2024
+Remove the off-chip memory task. The task was requiring significant time commitment by the students for limited benefits in their understanding of the system. Instead, a discussion on the trade-offs between resources and performance when it comes to the tuning of the cache size was moved to the classes. Remove the expectation of investigating the impact of cache size in the performance of the system. This has led to a considerable reduction of the time required to complete the coursework.
+Introduction of a test (probably under the Wiseflow format) to promote revision of material not covered in the coursework but only in the lectures/classes.
+All students are encouraged to consider both latency and throughput driven designs (Task 6 and Task 7 respectively). Improved learning outcome and leads to a fairer assessment.
+Introduction of text that clarifies the aims of each task and highlights the learning outcomes.
+Move the coursework to Quartus 23.1 to promote better compatibility with new OS and reduce bugs present in older versions of Quartus. During the coursework development, no bugs were encountered.
+Improved information is provided for installing the necessary SW.
+v5.4
+Nov 2023
+Provide further guidance to the students on how to explore the cache sizes for the system.
+Split the project after task 6 to two parts. Introduction of an individual component.
+Report 2 covers up to tasks 6 (including), where Report 3 covers tasks 7 and 8.
+
+

@@ -1,0 +1,16 @@
+Test case 1 (step = 5)
+  Vector length N = 52
+  Result f(x)     = 1.7010572800e+08
+
+Test case 2 (step = 1/8)
+  Vector length N = 2041
+  Result f(x)     = 6.6274365440e+09
+
+Test case 3 (step = 1/256)
+  Vector length N = 65281
+  Result f(x)     = 2.1193741107e+11
+
+Test case 4: random input vector
+  Vector length N = 2323
+  Result f(x)     = 7.4612725760e+09
+

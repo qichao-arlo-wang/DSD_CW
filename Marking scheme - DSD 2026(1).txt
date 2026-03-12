@@ -1,0 +1,63 @@
+ Marking scheme – 2026 (v6)
+The overall mark of the coursework consists of eight tasks (Task 1-8), a test, and an oral examination. The mark between the above elements are distributed as follows:
+Reports
+Report 1
+Report 2
+Report 3
+Test
+Oral
+Tasks
+1
+2
+3
+4
+5
+6
+7a
+7b
+7c
+8
+Test
+Oral
+Percentage
+0%
+0%
+5%
+5%
+5%
+10%
+10%
+10%
+15%
+10%
+15%
+15%
+Tasks 3-8 have many parts, and a more detailed break-down of the weight of those elements within the tasks is given below:
+Tasks 3 – 5 (15%)
+Discuss the implementation of cos function
+cos vs cosf
+Taylor expansion
+Code optimisation approaches
+Task 6 (10%)
+Proper use of lowest latency blocks (60)
+Discuss pipelining (and the fact that these blocks cannot be fully utilised) (+20)
+Discuss possible implementations (separate instructions, multicycle, predefined latency blocks) (+20)
+Task 7a (analysis) (10%)
+Use the 2^i for finding the estimated error and do simulations (no use of confidence interval) 50
+MC but no investigation on iterations and wordlength (60)
+MC + investigation on iterations (fixed wordlength) (70)
+MC + investigation on both (100)
+Task 7b (architecture/implementation) (10%)
+Design that has the right CORDIC architecture but does not meet timing (50)
+Design that does a single CORDIC iteration per cycle (70)
+Design that does a multiple CORDIC iterations per cycle (100)
+Task 7c (architecture/implementation) (15%)
+Design the FSM as part of the block and integrate all the subblocks under a single custom instruction.
+Task 8 (10%)
+Consider the design of CORDIC and (possibly) redesign it to support the approach (with justification) (20%)
+Final design (80%)
+Design that is based on two separate custom instruction calls (i.e. produce f(x) and do the sum through a custom instruction): 10
+Design that accepts (x, current_sum) and returns current_sum: 50
+Design that accepts inputs (x1, x2) and returns the f(x1)+f(x2). The sum takes place in a separate call: 60
+Design that accepts inputs (x1, x2, op) and returns the f(x1)+f(x2)+current_sum:70
+Pipelined design that can allow a new input before the inner function has been evaluated on the previous input: 85

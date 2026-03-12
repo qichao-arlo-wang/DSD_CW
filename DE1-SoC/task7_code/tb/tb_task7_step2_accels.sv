@@ -4,26 +4,35 @@ module tb_task7_step2_accels;
     logic clk;
     logic reset;
     logic clk_en;
-    logic start;
+
+    logic start_mul;
+    logic start_add;
+    logic start_sub;
+    logic start_cos;
+
     logic [31:0] dataa;
     logic [31:0] datab;
-    logic       n_addsub;
 
-    logic done_mul, done_addsub, done_cos;
-    logic [31:0] result_mul, result_addsub, result_cos;
+    logic done_mul, done_add, done_sub, done_cos;
+    logic [31:0] result_mul, result_add, result_sub, result_cos;
 
     task7_ci_fp32_mul u_mul (
-        .clk(clk), .reset(reset), .clk_en(clk_en), .start(start),
+        .clk(clk), .reset(reset), .clk_en(clk_en), .start(start_mul),
         .dataa(dataa), .datab(datab), .done(done_mul), .result(result_mul)
     );
 
-    task7_ci_fp32_addsub u_addsub (
-        .clk(clk), .reset(reset), .clk_en(clk_en), .start(start),
-        .dataa(dataa), .datab(datab), .n(n_addsub), .done(done_addsub), .result(result_addsub)
+    task7_ci_fp32_add u_add (
+        .clk(clk), .reset(reset), .clk_en(clk_en), .start(start_add),
+        .dataa(dataa), .datab(datab), .done(done_add), .result(result_add)
+    );
+
+    task7_ci_fp32_sub u_sub (
+        .clk(clk), .reset(reset), .clk_en(clk_en), .start(start_sub),
+        .dataa(dataa), .datab(datab), .done(done_sub), .result(result_sub)
     );
 
     task7_ci_cos_only u_cos (
-        .clk(clk), .reset(reset), .clk_en(clk_en), .start(start),
+        .clk(clk), .reset(reset), .clk_en(clk_en), .start(start_cos),
         .dataa(dataa), .datab(datab), .done(done_cos), .result(result_cos)
     );
 
@@ -73,59 +82,65 @@ module tb_task7_step2_accels;
         end
     endfunction
 
-    task automatic pulse_start;
+    task automatic pulse_start(input logic [3:0] start_sel);
         begin
             @(posedge clk);
-            start = 1'b1;
+            start_mul = start_sel[0];
+            start_add = start_sel[1];
+            start_sub = start_sel[2];
+            start_cos = start_sel[3];
             @(posedge clk);
-            start = 1'b0;
+            start_mul = 1'b0;
+            start_add = 1'b0;
+            start_sub = 1'b0;
+            start_cos = 1'b0;
         end
     endtask
 
     initial begin
-        real rm, ra, rc;
+        real rm, ra, rs, rc;
         clk = 0;
         reset = 1;
         clk_en = 1;
-        start = 0;
+
+        start_mul = 0;
+        start_add = 0;
+        start_sub = 0;
+        start_cos = 0;
+
         dataa = 0;
         datab = 0;
-        n_addsub = 0;
 
         repeat (5) @(posedge clk);
         reset = 0;
 
         dataa = int_to_fp32_bits(8);
         datab = int_to_fp32_bits(3);
-        n_addsub = 0;
 
-        pulse_start();
-        wait(done_mul);
+        pulse_start(4'b0001);
+        @(posedge done_mul);
         rm = fp32_bits_to_real(result_mul);
         $display("step2 mul(8,3) = %f", rm);
         if ((rm < 23.9) || (rm > 24.1)) $error("mul mismatch");
 
-        pulse_start();
-        wait(done_addsub);
-        ra = fp32_bits_to_real(result_addsub);
+        pulse_start(4'b0010);
+        @(posedge done_add);
+        ra = fp32_bits_to_real(result_add);
         $display("step2 add(8,3) = %f", ra);
         if ((ra < 10.9) || (ra > 11.1)) $error("add mismatch");
 
-        pulse_start();
-        wait(done_cos);
+        pulse_start(4'b1000);
+        @(posedge done_cos);
         rc = fp32_bits_to_real(result_cos);
         $display("step2 cos(8)   = %f", rc);
 
-        n_addsub = 1'b1;
-        pulse_start();
-        wait(done_addsub);
-        ra = fp32_bits_to_real(result_addsub);
-        $display("step2 sub(8,3) = %f", ra);
-        if ((ra < 4.9) || (ra > 5.1)) $error("sub mismatch");
+        pulse_start(4'b0100);
+        @(posedge done_sub);
+        rs = fp32_bits_to_real(result_sub);
+        $display("step2 sub(8,3) = %f", rs);
+        if ((rs < 4.9) || (rs > 5.1)) $error("sub mismatch");
 
         $display("tb_task7_step2_accels PASSED");
         $finish;
     end
 endmodule
-
-

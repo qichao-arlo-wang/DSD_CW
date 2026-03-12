@@ -1,0 +1,402 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dC:/Users/arlow/Downloads/DSD_CW/DE1-SoC/task7_code
+v__tmp_latency_cmp
+Z1 DXx6 sv_std 3 std 0 22 AD7iAPLo6nTIKk<N0eo=D3
+Z2 !s110 1773276258
+!i10b 1
+!s100 HD>z^bf7d>_@=A@QDVR9Z0
+IK?YIa@d4JiM:^5?QMn=lB2
+Z3 VDg1SIo80bB@j0V0VzS_@n1
+!s105 __tmp_latency_cmp_sv_unit
+S1
+R0
+w1773276243
+8tb/__tmp_latency_cmp.sv
+Ftb/__tmp_latency_cmp.sv
+L0 3
+Z4 OV;L;10.5b;63
+r1
+!s85 0
+31
+Z5 !s108 1773276258.000000
+Z6 !s107 rtl/ci_step2/task7_ci_fp32_sub.sv|rtl/ci_step2/task7_ci_fp32_add.sv|rtl/ci_step2/task7_ci_fp32_mul.sv|rtl/core/task7_fp_sub_ip_unit.sv|rtl/core/task7_fp_add_ip_unit.sv|rtl/core/task7_fp_mul_ip_unit.sv|tb/__tmp_latency_cmp.sv|
+Z7 !s90 -sv|+define+TASK7_FORCE_SIM|-work|work_t7split2|tb/__tmp_latency_cmp.sv|rtl/core/task7_fp_mul_ip_unit.sv|rtl/core/task7_fp_add_ip_unit.sv|rtl/core/task7_fp_sub_ip_unit.sv|rtl/ci_step2/task7_ci_fp32_mul.sv|rtl/ci_step2/task7_ci_fp32_add.sv|rtl/ci_step2/task7_ci_fp32_sub.sv|
+!i113 1
+Z8 o-sv -work work_t7split2
+Z9 !s92 -sv +define+TASK7_FORCE_SIM -work work_t7split2
+Z10 tCvgOpt 0
+n@__tmp_latency_cmp
+vcustom_fx_cos
+R1
+Z11 !s110 1773268462
+!i10b 1
+!s100 LPX<a9KWh2z7165NI0BB[1
+IHN>zgf>PBZXz`[?JNF3[i0
+R3
+Z12 !s105 task7_ci_cos_only_sv_unit
+S1
+R0
+w1773268436
+Z13 8rtl/ci_step2/task7_ci_cos_only.sv
+Z14 Frtl/ci_step2/task7_ci_cos_only.sv
+Z15 L0 13
+R4
+r1
+!s85 0
+31
+Z16 !s108 1773268462.000000
+Z17 !s107 rtl/ci_step2/task7_ci_cos_only.sv|rtl/ci_step2/task7_ci_fp32_sub.sv|rtl/ci_step2/task7_ci_fp32_add.sv|rtl/ci_step2/task7_ci_fp32_mul.sv|rtl/core/task7_fp_sub_ip_unit.sv|rtl/core/task7_fp_add_ip_unit.sv|rtl/core/task7_fp_mul_ip_unit.sv|rtl/core/task7_cordic_cos_multi_iter.sv|rtl/core/task7_fx_to_fp32.sv|rtl/core/task7_fp32_to_fx.sv|tb/tb_task7_step2_accels.sv|
+Z18 !s90 -sv|-work|work_t7split2|tb/tb_task7_step2_accels.sv|rtl/core/task7_fp32_to_fx.sv|rtl/core/task7_fx_to_fp32.sv|rtl/core/task7_cordic_cos_multi_iter.sv|rtl/core/task7_fp_mul_ip_unit.sv|rtl/core/task7_fp_add_ip_unit.sv|rtl/core/task7_fp_sub_ip_unit.sv|rtl/ci_step2/task7_ci_fp32_mul.sv|rtl/ci_step2/task7_ci_fp32_add.sv|rtl/ci_step2/task7_ci_fp32_sub.sv|rtl/ci_step2/task7_ci_cos_only.sv|
+!i113 1
+R8
+R10
+vtask7_ci_cos_only
+R1
+Z19 !s110 1773269091
+!i10b 1
+!s100 =FH6LcnjIX5o<0Ji]3XB[0
+IPkaFoXSOBI<mYlE5BlUXR1
+R3
+R12
+S1
+R0
+w1773268580
+R13
+R14
+R15
+R4
+r1
+!s85 0
+31
+Z20 !s108 1773269091.000000
+Z21 !s107 tb/tb_task7_perf.sv|tb/tb_task7_step2_accels.sv|rtl/ci_step2/task7_ci_cos_only.sv|
+Z22 !s90 -sv|-work|work_t7split2|rtl/ci_step2/task7_ci_cos_only.sv|tb/tb_task7_step2_accels.sv|tb/tb_task7_perf.sv|
+!i113 1
+R8
+R10
+vtask7_ci_f_single
+R1
+!s110 1773266979
+!i10b 1
+!s100 9je4QizWD`G`GZ<JZ??bX0
+IZ4CZLNQKH0MKj^zHbf:>L3
+R3
+!s105 task7_ci_f_single_sv_unit
+S1
+R0
+w1773266499
+8rtl/ci_step3/task7_ci_f_single.sv
+Frtl/ci_step3/task7_ci_f_single.sv
+L0 15
+R4
+r1
+!s85 0
+31
+!s108 1773266979.000000
+!s107 rtl/ci_step3/task7_ci_f_single.sv|rtl/ci_step2/task7_ci_cos_only.sv|rtl/ci_step2/task7_ci_fp32_sub.sv|rtl/ci_step2/task7_ci_fp32_add.sv|rtl/ci_step2/task7_ci_fp32_mul.sv|rtl/core/task7_fp_sub_ip_unit.sv|rtl/core/task7_fp_add_ip_unit.sv|rtl/core/task7_fp_mul_ip_unit.sv|rtl/core/task7_cordic_cos_multi_iter.sv|rtl/core/task7_fx_to_fp32.sv|rtl/core/task7_fp32_to_fx.sv|tb/tb_task7_perf.sv|
+!s90 -sv|-work|work_t7split2|tb/tb_task7_perf.sv|rtl/core/task7_fp32_to_fx.sv|rtl/core/task7_fx_to_fp32.sv|rtl/core/task7_cordic_cos_multi_iter.sv|rtl/core/task7_fp_mul_ip_unit.sv|rtl/core/task7_fp_add_ip_unit.sv|rtl/core/task7_fp_sub_ip_unit.sv|rtl/ci_step2/task7_ci_fp32_mul.sv|rtl/ci_step2/task7_ci_fp32_add.sv|rtl/ci_step2/task7_ci_fp32_sub.sv|rtl/ci_step2/task7_ci_cos_only.sv|rtl/ci_step3/task7_ci_f_single.sv|
+!i113 1
+R8
+R10
+vtask7_ci_fp32_add
+R1
+R2
+!i10b 1
+!s100 Ycca_LaNY^YlU;kTn2a?D0
+IflJnIQEaIQ@zjUW[g=<;?1
+R3
+!s105 task7_ci_fp32_add_sv_unit
+S1
+R0
+w1773266446
+8rtl/ci_step2/task7_ci_fp32_add.sv
+Frtl/ci_step2/task7_ci_fp32_add.sv
+L0 8
+R4
+r1
+!s85 0
+31
+R5
+R6
+R7
+!i113 1
+R8
+R9
+R10
+vtask7_ci_fp32_mul
+R1
+R2
+!i10b 1
+!s100 i@87IBP_?KYHT`ej<6alz1
+Ie=mG]7l95FV0TZhSCPNj<0
+R3
+!s105 task7_ci_fp32_mul_sv_unit
+S1
+R0
+w1773249881
+8rtl/ci_step2/task7_ci_fp32_mul.sv
+Frtl/ci_step2/task7_ci_fp32_mul.sv
+L0 8
+R4
+r1
+!s85 0
+31
+R5
+R6
+R7
+!i113 1
+R8
+R9
+R10
+vtask7_ci_fp32_sub
+R1
+R2
+!i10b 1
+!s100 ?kH?RmP=f7A488Ug31bQF0
+ILU3VUU8>2fb>L46B7@go=0
+R3
+!s105 task7_ci_fp32_sub_sv_unit
+S1
+R0
+w1773266458
+8rtl/ci_step2/task7_ci_fp32_sub.sv
+Frtl/ci_step2/task7_ci_fp32_sub.sv
+L0 8
+R4
+r1
+!s85 0
+31
+R5
+R6
+R7
+!i113 1
+R8
+R9
+R10
+vtask7_cordic_cos_multi_iter
+R1
+R11
+!i10b 1
+!s100 Q>I1F84f2I_Y3?FI<l6e?1
+Ik>MY`QFXQcBLdk6hjz7MM2
+R3
+!s105 task7_cordic_cos_multi_iter_sv_unit
+S1
+R0
+w1773182745
+8rtl/core/task7_cordic_cos_multi_iter.sv
+Frtl/core/task7_cordic_cos_multi_iter.sv
+R15
+R4
+r1
+!s85 0
+31
+R16
+R17
+R18
+!i113 1
+R8
+R10
+vtask7_fp32_to_fx
+R1
+R11
+!i10b 1
+!s100 Q1=;V@MQ7JWK>1;=9Lb=U0
+I?CI6k06fW^`WJR_<BCgVi3
+R3
+!s105 task7_fp32_to_fx_sv_unit
+S1
+R0
+Z23 w1773173537
+8rtl/core/task7_fp32_to_fx.sv
+Frtl/core/task7_fp32_to_fx.sv
+R15
+R4
+r1
+!s85 0
+31
+R16
+R17
+R18
+!i113 1
+R8
+R10
+vtask7_fp_add_ip_unit
+R1
+R2
+!i10b 1
+!s100 b18?TaBijJUk4O59ihbXE1
+IUXdH1[Vb[?cgZh3>13;^=2
+R3
+!s105 task7_fp_add_ip_unit_sv_unit
+S1
+R0
+w1773268925
+8rtl/core/task7_fp_add_ip_unit.sv
+Frtl/core/task7_fp_add_ip_unit.sv
+L0 9
+R4
+r1
+!s85 0
+31
+R5
+R6
+R7
+!i113 1
+R8
+R9
+R10
+vtask7_fp_mul_ip_unit
+R1
+R2
+!i10b 1
+!s100 ;^_g>nd>l:7e`PHa>CbJ>3
+INEfQTBKTVdYzWJXVWIgd[0
+R3
+!s105 task7_fp_mul_ip_unit_sv_unit
+S1
+R0
+w1773268973
+8rtl/core/task7_fp_mul_ip_unit.sv
+Frtl/core/task7_fp_mul_ip_unit.sv
+L0 9
+R4
+r1
+!s85 0
+31
+R5
+R6
+R7
+!i113 1
+R8
+R9
+R10
+vtask7_fp_sub_ip_unit
+R1
+R2
+!i10b 1
+!s100 e6ji@NAmXk_:mbZBNXK?I3
+IPNU?^H:n079FI0m>OkZ1l0
+R3
+!s105 task7_fp_sub_ip_unit_sv_unit
+S1
+R0
+w1773268950
+8rtl/core/task7_fp_sub_ip_unit.sv
+Frtl/core/task7_fp_sub_ip_unit.sv
+L0 9
+R4
+r1
+!s85 0
+31
+R5
+R6
+R7
+!i113 1
+R8
+R9
+R10
+vtask7_fx_to_fp32
+R1
+R11
+!i10b 1
+!s100 C=7L_4_5NMD>W_]7CLAHA0
+IX0_IMZA@H>d219;WO6L<U1
+R3
+!s105 task7_fx_to_fp32_sv_unit
+S1
+R0
+w1773183781
+8rtl/core/task7_fx_to_fp32.sv
+Frtl/core/task7_fx_to_fp32.sv
+R15
+R4
+r1
+!s85 0
+31
+R16
+R17
+R18
+!i113 1
+R8
+R10
+vtb_task7_ci_f
+R1
+!s110 1773266961
+!i10b 1
+!s100 ?XBclJE1D03o6;bF1UV5T2
+IBOziS]g_>N_baS5i^bPah0
+R3
+!s105 tb_task7_ci_f_sv_unit
+S1
+R0
+R23
+8tb/tb_task7_ci_f.sv
+Ftb/tb_task7_ci_f.sv
+L0 3
+R4
+r1
+!s85 0
+31
+!s108 1773266961.000000
+!s107 rtl/ci_step3/task7_ci_f_single.sv|rtl/core/task7_fp_add_ip_unit.sv|rtl/core/task7_fp_mul_ip_unit.sv|rtl/core/task7_cordic_cos_multi_iter.sv|rtl/core/task7_fx_to_fp32.sv|rtl/core/task7_fp32_to_fx.sv|tb/tb_task7_ci_f.sv|
+!s90 -sv|-work|work_t7split2|tb/tb_task7_ci_f.sv|rtl/core/task7_fp32_to_fx.sv|rtl/core/task7_fx_to_fp32.sv|rtl/core/task7_cordic_cos_multi_iter.sv|rtl/core/task7_fp_mul_ip_unit.sv|rtl/core/task7_fp_add_ip_unit.sv|rtl/ci_step3/task7_ci_f_single.sv|
+!i113 1
+R8
+R10
+vtb_task7_perf
+R1
+R19
+!i10b 1
+!s100 ZB2kOz1P6:gWfN@HJTz>52
+IHHCnO]LhOb5n4J_<VWj=D1
+R3
+!s105 tb_task7_perf_sv_unit
+S1
+R0
+w1773268590
+8tb/tb_task7_perf.sv
+Ftb/tb_task7_perf.sv
+L0 3
+R4
+r1
+!s85 0
+31
+R20
+R21
+R22
+!i113 1
+R8
+R10
+vtb_task7_step2_accels
+R1
+R19
+!i10b 1
+!s100 CLhDLMKBFUGcG5d2LiO@10
+I;Zb>=2RD?K=7MNZf1G2[<0
+R3
+!s105 tb_task7_step2_accels_sv_unit
+S1
+R0
+w1773268592
+8tb/tb_task7_step2_accels.sv
+Ftb/tb_task7_step2_accels.sv
+L0 3
+R4
+r1
+!s85 0
+31
+R20
+R21
+R22
+!i113 1
+R8
+R10

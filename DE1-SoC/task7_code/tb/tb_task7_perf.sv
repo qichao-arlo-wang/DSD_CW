@@ -29,9 +29,9 @@ module tb_task7_perf;
         .dataa(dataa), .datab(datab), .done(done_mul), .result(result_mul)
     );
 
-    task7_ci_fp32_addsub u_add (
+    task7_ci_fp32_add u_add (
         .clk(clk), .reset(reset), .clk_en(clk_en), .start(start),
-        .dataa(dataa), .datab(datab), .n(n[0]), .done(done_add), .result(result_add)
+         .dataa(dataa), .datab(datab), .done(done_add), .result(result_add)
     );
 
     task7_ci_cos_only u_cos (

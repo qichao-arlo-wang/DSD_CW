@@ -2,12 +2,12 @@
 <sch:Settings xmlns:sch="http://www.altera.com/embeddedsw/bsp/schema">
         <BspType>hal</BspType>
         <BspVersion>default</BspVersion>
-        <BspGeneratedTimeStamp>2026-3-11 14:32:12</BspGeneratedTimeStamp>
-        <BspGeneratedUnixTimeStamp>1773239532191</BspGeneratedUnixTimeStamp>
+        <BspGeneratedTimeStamp>2026-3-12 17:12:56</BspGeneratedTimeStamp>
+        <BspGeneratedUnixTimeStamp>1773335576064</BspGeneratedUnixTimeStamp>
         <BspGeneratedLocation>C:\Users\arlow\Downloads\DSD_CW\DE1-SoC\system_template_de1_soc\software\hello_world_custom_instr_bsp</BspGeneratedLocation>
         <BspSettingsFile>settings.bsp</BspSettingsFile>
         <SopcDesignFile>C:\Users\arlow\Downloads\DSD_CW\DE1-SoC\system_template_de1_soc\first_nios2_system.sopcinfo</SopcDesignFile>
-        <SystemFileHash>b9ff2973f9a732a84866cb2b1598af6e90524cedb3d4eeab23ca94d55cbcb</SystemFileHash>
+        <SystemFileHash>e544ecfe8df16345862645a2ea449a159b692c52e7a6744f5d7cd37a2e5</SystemFileHash>
         <JdiFile>default</JdiFile>
         <Cpu>cpu</Cpu>
         <SchemaVersion>1.9</SchemaVersion>
@@ -27,7 +27,7 @@
                 <SettingName>hal.timestamp_timer</SettingName>
                 <Identifier>ALT_TIMESTAMP_CLK</Identifier>
                 <Type>UnquotedString</Type>
-                <Value>none</Value>
+                <Value>sys_clk_timer</Value>
                 <DefaultValue>none</DefaultValue>
                 <DestinationFile>system_h_define</DestinationFile>
                 <Description>Slave descriptor of timestamp timer device. This device is used by Altera HAL timestamp drivers for high-resolution time measurement. This setting defines the value of ALT_TIMESTAMP_CLK in system.h.</Description>

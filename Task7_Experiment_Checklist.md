@@ -81,23 +81,6 @@ It focuses on:
 
 ## Step 2: Three-accelerator integration (intermediate architecture)
 
-### Files to use
-- Step-2 CI RTL:
-  - [/Users/arlo/Projects/DSD_CW/task7_code/rtl/ci_step2/task7_ci_fp32_mul.sv](/Users/arlo/Projects/DSD_CW/task7_code/rtl/ci_step2/task7_ci_fp32_mul.sv)
-  - [/Users/arlo/Projects/DSD_CW/task7_code/rtl/ci_step2/task7_ci_fp32_addsub.sv](/Users/arlo/Projects/DSD_CW/task7_code/rtl/ci_step2/task7_ci_fp32_addsub.sv)
-  - [/Users/arlo/Projects/DSD_CW/task7_code/rtl/ci_step2/task7_ci_cos_only.sv](/Users/arlo/Projects/DSD_CW/task7_code/rtl/ci_step2/task7_ci_cos_only.sv)
-- Shared core RTL:
-  - [/Users/arlo/Projects/DSD_CW/task7_code/rtl/core/task7_fp32_mul_unit.sv](/Users/arlo/Projects/DSD_CW/task7_code/rtl/core/task7_fp32_mul_unit.sv)
-  - [/Users/arlo/Projects/DSD_CW/task7_code/rtl/core/task7_fp32_add_unit.sv](/Users/arlo/Projects/DSD_CW/task7_code/rtl/core/task7_fp32_add_unit.sv)
-  - [/Users/arlo/Projects/DSD_CW/task7_code/rtl/core/task7_fp32_to_fx.sv](/Users/arlo/Projects/DSD_CW/task7_code/rtl/core/task7_fp32_to_fx.sv)
-  - [/Users/arlo/Projects/DSD_CW/task7_code/rtl/core/task7_fx_to_fp32.sv](/Users/arlo/Projects/DSD_CW/task7_code/rtl/core/task7_fx_to_fp32.sv)
-  - [/Users/arlo/Projects/DSD_CW/task7_code/rtl/core/task7_cordic_cos_multi_iter.sv](/Users/arlo/Projects/DSD_CW/task7_code/rtl/core/task7_cordic_cos_multi_iter.sv)
-- Step-2 TB:
-  - [/Users/arlo/Projects/DSD_CW/task7_code/tb/tb_task7_step2_accels.sv](/Users/arlo/Projects/DSD_CW/task7_code/tb/tb_task7_step2_accels.sv)
-  - [/Users/arlo/Projects/DSD_CW/task7_code/tb/tb_task7_perf.sv](/Users/arlo/Projects/DSD_CW/task7_code/tb/tb_task7_perf.sv)
-- Nios software runner (already prepared for Step-2 and Step-3):
-  - [/Users/arlo/Projects/DSD_CW/DE1-SoC/system_template_de1_soc/software/hello_world_custom_instr/hello_world.c](/Users/arlo/Projects/DSD_CW/DE1-SoC/system_template_de1_soc/software/hello_world_custom_instr/hello_world.c)
-
 ### Experiments to run
 1. Integrate 3 separate custom instructions in Platform Designer (mul/addsub/cos).
 2. Verify each accelerator call correctness.

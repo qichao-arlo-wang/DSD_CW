@@ -51,6 +51,70 @@
          type = "String";
       }
    }
+   element custom_cos
+   {
+      datum _sortIndex
+      {
+         value = "10";
+         type = "int";
+      }
+   }
+   element custom_fp_add
+   {
+      datum _sortIndex
+      {
+         value = "7";
+         type = "int";
+      }
+   }
+   element custom_fp_mul
+   {
+      datum _sortIndex
+      {
+         value = "9";
+         type = "int";
+      }
+   }
+   element custom_fp_sub
+   {
+      datum _sortIndex
+      {
+         value = "8";
+         type = "int";
+      }
+   }
+   element custom_single_f_accelerator
+   {
+      datum _sortIndex
+      {
+         value = "11";
+         type = "int";
+      }
+   }
+   element first_nios2_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element first_nios2_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element first_nios2_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
    element first_nios2_system
    {
       datum _originalDeviceFamily
@@ -131,14 +195,6 @@
          type = "String";
       }
    }
-   element nios_custom_instr_floating_point_0
-   {
-      datum _sortIndex
-      {
-         value = "8";
-         type = "int";
-      }
-   }
    element onchip_mem
    {
       datum _sortIndex
@@ -203,14 +259,6 @@
          type = "String";
       }
    }
-   element task7_ci_cos_only
-   {
-      datum _sortIndex
-      {
-         value = "7";
-         type = "int";
-      }
-   }
 }
 ]]></parameter>
  <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
@@ -257,7 +305,7 @@
   <parameter name="cpuArchRev" value="1" />
   <parameter name="cpuID" value="0" />
   <parameter name="cpuReset" value="false" />
-  <parameter name="customInstSlavesSystemInfo"><![CDATA[<info><slave name="task7_ci_cos_only_0" baseAddress="0" addressSpan="1" clockCycleType="VARIABLE" /><slave name="nios_custom_instr_floating_point_0" baseAddress="252" addressSpan="4" clockCycleType="VARIABLE" /></info>]]></parameter>
+  <parameter name="customInstSlavesSystemInfo"><![CDATA[<info><slave name="custom_single_f_accelerator_0" baseAddress="4" addressSpan="1" clockCycleType="VARIABLE" /></info>]]></parameter>
   <parameter name="customInstSlavesSystemInfo_nios_a" value="&lt;info/&gt;" />
   <parameter name="customInstSlavesSystemInfo_nios_b" value="&lt;info/&gt;" />
   <parameter name="customInstSlavesSystemInfo_nios_c" value="&lt;info/&gt;" />
@@ -422,6 +470,37 @@
   <parameter name="tracefilename" value="" />
   <parameter name="userDefinedSettings" value="" />
  </module>
+ <module name="custom_cos" kind="custom_cos" version="1.0" enabled="0">
+  <parameter name="CORDIC_FRAC" value="22" />
+  <parameter name="CORDIC_ITER" value="18" />
+  <parameter name="CORDIC_ITER_PER_CYCLE" value="1" />
+  <parameter name="CORDIC_W" value="28" />
+  <parameter name="FX_FRAC" value="22" />
+  <parameter name="FX_W" value="40" />
+ </module>
+ <module name="custom_fp_add" kind="custom_fp_add" version="1.0" enabled="0">
+  <parameter name="ADD_LATENCY" value="3" />
+ </module>
+ <module name="custom_fp_mul" kind="custom_fp_mul" version="1.0" enabled="0">
+  <parameter name="MUL_LATENCY" value="3" />
+ </module>
+ <module name="custom_fp_sub" kind="custom_fp_sub" version="1.0" enabled="0">
+  <parameter name="SUB_LATENCY" value="3" />
+ </module>
+ <module
+   name="custom_single_f_accelerator"
+   kind="custom_single_f_accelerator"
+   version="1.0"
+   enabled="1">
+  <parameter name="ADD_LATENCY" value="3" />
+  <parameter name="CORDIC_FRAC" value="22" />
+  <parameter name="CORDIC_ITER" value="18" />
+  <parameter name="CORDIC_ITER_PER_CYCLE" value="3" />
+  <parameter name="CORDIC_W" value="28" />
+  <parameter name="FX_FRAC" value="22" />
+  <parameter name="FX_W" value="40" />
+  <parameter name="MUL_LATENCY" value="3" />
+ </module>
  <module
    name="jtag_uart"
    kind="altera_avalon_jtag_uart"
@@ -454,13 +533,6 @@
   <parameter name="simDoTestBenchWiring" value="false" />
   <parameter name="simDrivenValue" value="0" />
   <parameter name="width" value="8" />
- </module>
- <module
-   name="nios_custom_instr_floating_point_0"
-   kind="altera_nios_custom_instr_floating_point"
-   version="23.1"
-   enabled="1">
-  <parameter name="useDivider" value="0" />
  </module>
  <module
    name="onchip_mem"
@@ -516,18 +588,6 @@
    version="23.1"
    enabled="1">
   <parameter name="id" value="0" />
- </module>
- <module
-   name="task7_ci_cos_only"
-   kind="task7_ci_cos_only"
-   version="1.0"
-   enabled="1">
-  <parameter name="CORDIC_FRAC" value="22" />
-  <parameter name="CORDIC_ITER" value="18" />
-  <parameter name="CORDIC_ITER_PER_CYCLE" value="3" />
-  <parameter name="CORDIC_W" value="28" />
-  <parameter name="FX_FRAC" value="22" />
-  <parameter name="FX_W" value="40" />
  </module>
  <connection
    kind="avalon"
@@ -617,8 +677,8 @@
    kind="nios_custom_instruction"
    version="23.1"
    start="cpu.custom_instruction_master"
-   end="task7_ci_cos_only.ncs_cis0">
-  <parameter name="CIName" value="task7_ci_cos_only_0" />
+   end="custom_fp_add.ncs_cis0">
+  <parameter name="CIName" value="custom_fp_add_0" />
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0" />
  </connection>
@@ -626,10 +686,37 @@
    kind="nios_custom_instruction"
    version="23.1"
    start="cpu.custom_instruction_master"
-   end="nios_custom_instr_floating_point_0.s1">
-  <parameter name="CIName">nios_custom_instr_floating_point_0</parameter>
+   end="custom_fp_sub.ncs_cis0">
+  <parameter name="CIName" value="custom_fp_sub_0" />
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="252" />
+  <parameter name="baseAddress" value="1" />
+ </connection>
+ <connection
+   kind="nios_custom_instruction"
+   version="23.1"
+   start="cpu.custom_instruction_master"
+   end="custom_fp_mul.ncs_cis0">
+  <parameter name="CIName" value="custom_fp_mul_0" />
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="2" />
+ </connection>
+ <connection
+   kind="nios_custom_instruction"
+   version="23.1"
+   start="cpu.custom_instruction_master"
+   end="custom_cos.ncs_cis0">
+  <parameter name="CIName" value="custom_cos" />
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="3" />
+ </connection>
+ <connection
+   kind="nios_custom_instruction"
+   version="23.1"
+   start="cpu.custom_instruction_master"
+   end="custom_single_f_accelerator.ncs_cis0">
+  <parameter name="CIName">custom_single_f_accelerator_0</parameter>
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="4" />
  </connection>
  <connection kind="reset" version="23.1" start="clk_0.clk_reset" end="cpu.reset" />
  <connection
