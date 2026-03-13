@@ -44,6 +44,8 @@ module task8_ci_f2_accum #(
     logic [31:0] acc_reg;
     logic [31:0] x_reg;
     logic [31:0] fx_reg;
+    logic        start_q;
+    logic        start_evt;
 
     logic start_fx;
     logic done_fx;
@@ -59,6 +61,10 @@ module task8_ci_f2_accum #(
     // Start pulses are emitted by dedicated launch states.
     assign start_fx = (state == S_LAUNCH_FX);
     assign start_add = (state == S_LAUNCH_ADD);
+    // Robust start detection:
+    // treat a request as a rising edge, so a stretched start pulse does not
+    // retrigger, and a new request can be accepted cleanly after done.
+    assign start_evt = start & ~start_q;
 
     // Reuse Task-7 single-f(x) CI core to compute f(x) on datab.
     task7_ci_f_single #(
@@ -105,12 +111,14 @@ module task8_ci_f2_accum #(
             acc_reg <= 32'd0;
             x_reg   <= 32'd0;
             fx_reg  <= 32'd0;
+            start_q <= 1'b0;
         end else if (clk_en) begin
+            start_q <= start;
             done <= 1'b0;
 
             case (state)
                 S_IDLE: begin
-                    if (start) begin
+                    if (start_evt) begin
                         acc_reg <= dataa;
                         x_reg   <= datab;
                         state   <= S_LAUNCH_FX;
@@ -141,7 +149,16 @@ module task8_ci_f2_accum #(
 
                 S_OUT: begin
                     done  <= 1'b1;
-                    state <= S_IDLE;
+                    // Accept a back-to-back request on the same cycle done is
+                    // asserted. This avoids dropping calls when software issues
+                    // CI operations with minimal spacing.
+                    if (start_evt) begin
+                        acc_reg <= dataa;
+                        x_reg   <= datab;
+                        state   <= S_LAUNCH_FX;
+                    end else begin
+                        state <= S_IDLE;
+                    end
                 end
 
                 default: begin
