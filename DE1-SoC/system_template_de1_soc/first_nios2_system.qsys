@@ -59,7 +59,7 @@
          type = "int";
       }
    }
-   element custom_f_accum_0
+   element custom_f_accum
    {
       datum _sortIndex
       {
@@ -97,6 +97,14 @@
       {
          value = "11";
          type = "int";
+      }
+   }
+   element first_nios2_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
       }
    }
    element first_nios2_system
@@ -486,11 +494,7 @@
   <parameter name="FX_FRAC" value="22" />
   <parameter name="FX_W" value="40" />
  </module>
- <module
-   name="custom_f_accum_0"
-   kind="custom_f_accum"
-   version="1.0"
-   enabled="1">
+ <module name="custom_f_accum" kind="custom_f_accum" version="1.0" enabled="1">
   <parameter name="ADD_LATENCY" value="3" />
   <parameter name="CORDIC_FRAC" value="22" />
   <parameter name="CORDIC_ITER" value="18" />
@@ -744,7 +748,7 @@
    kind="nios_custom_instruction"
    version="23.1"
    start="cpu.custom_instruction_master"
-   end="custom_f_accum_0.ncs_cis0">
+   end="custom_f_accum.ncs_cis0">
   <parameter name="CIName" value="custom_f_accum_0" />
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0" />
