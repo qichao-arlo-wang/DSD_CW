@@ -326,12 +326,14 @@ If one $f(x)$ evaluation took exactly one clock cycle, C3 (65,281 samples) would
 % =============================================================
 
 \subsection{Architecture Evolution from Task 7}
-This subsection should explain the concrete architectural changes introduced from Task 7 to Task 8, including the accumulation strategy, interface evolution, and scheduling differences. It should also state whether the CORDIC block was reused or redesigned and justify that decision, then explain why the selected interface level was preferred over the alternatives in the marking-level hierarchy.
+Task 8 changes the optimization target from single-call latency to end-to-end throughput of the outer reduction $F(X)$. In Task 7 Step-3, each sample requires a custom-instruction call for $f(x)$ and software-side accumulation in the CPU loop. In Task 8, accumulation is moved into the custom-instruction path so each loop iteration can directly update the running sum through hardware. The CORDIC-based cosine computation is reused from Task 7, so numerical behavior is expected to remain aligned while reducing software orchestration work per sample.
+
+The current integrated hardware/software run is based on a two-operand accumulate interface exposed by the BSP in this build, while a richer dual-input Task-8 block was also developed and validated in RTL simulation. This keeps the on-board integration simple, but it also means the measured hardware run in this section reflects the currently integrated CI contract rather than the full dual-input opcode interface explored in RTL.
 
 \subsection{Interface Options vs Marking Levels}
 \begin{table}[t]
 \centering
-\caption{Task-8 interface option mapping (placeholder).}
+\caption{Task-8 interface-option mapping and status in this submission.}
 \label{tab:t8_interface_levels}
 \scriptsize
 \resizebox{\linewidth}{!}{%
@@ -339,20 +341,26 @@ This subsection should explain the concrete architectural changes introduced fro
 \toprule
 Option & Description / achieved in this work \\
 \midrule
-L1 & Separate CI for $f(x)$ and sum (TODO) \\
-L2 & Input $(x,\text{current\_sum})$ output new sum (TODO) \\
-L3 & Input $(x_1,x_2)$ output $f(x_1)+f(x_2)$ (TODO) \\
-L4 & Input $(x_1,x_2,op)$ output with accumulated sum (TODO) \\
-L5 & Pipelined: accepts new input before previous inner-function completion (TODO) \\
+L1 & Separate CI for $f(x)$ and software sum. Used in earlier steps, not final Task-8 target. \\
+L2 & Input $(x,\mathrm{sum}_{in})$, output $\mathrm{sum}_{out}=\mathrm{sum}_{in}+f(x)$. This is the interface used by the current on-board Step-4 run. \\
+L3 & Input $(x_1,x_2)$, output $f(x_1)+f(x_2)$. Explored in RTL-level throughput study. \\
+L4 & Input $(x_1,x_2,\mathrm{op})$ with internal accumulated sum and control modes. Implemented in RTL prototype and verified functionally in simulation. \\
+L5 & Pipelined accept-new-input-before-completion mode. Not implemented in this submission. \\
 \bottomrule
 \end{tabular}
 }
 \end{table}
 
 \subsection{Final Task-8 Datapath and Scheduling}
+The deployed Step-4 software flow issues one CI call per sample to update an accumulator state in hardware-oriented form. Conceptually, the datapath computes $f(x)$ and then combines it with the incoming accumulator in one CI transaction visible to software. This reduces explicit CPU-side arithmetic and lowers loop overhead compared with Step-3. The arithmetic core still reuses FP add/multiply and CORDIC cosine blocks derived from Task 7.
+
 \begin{figure}[t]
 \centering
-\fbox{\parbox[c][24mm][c]{0.90\linewidth}{\centering Placeholder: Task 8 datapath and control}}
+\fbox{\parbox{0.90\linewidth}{\centering\small
+Task-8 integration used for hardware run:\\
+input $(\mathrm{acc}_{in},x)$ from CI call, compute $f(x)$, then form\\
+$\mathrm{acc}_{out}=\mathrm{acc}_{in}+f(x)$ and return to software loop.
+}}
 \caption{Task 8 architecture and pipeline schedule.}
 \label{fig:t8_arch}
 \end{figure}
@@ -360,7 +368,7 @@ L5 & Pipelined: accepts new input before previous inner-function completion (TOD
 \subsection{Task 8 Results}
 \begin{table}[t]
 \centering
-\caption{Task 8 performance/resources/error (placeholder).}
+\caption{Task-8 Step-4 measured software results (10 runs, 1\,kHz tick source).}
 \label{tab:t8_results}
 \scriptsize
 \resizebox{\linewidth}{!}{%
@@ -368,16 +376,46 @@ L5 & Pipelined: accepts new input before previous inner-function completion (TOD
 \toprule
 Metric & C1 & C2 & C3 \\
 \midrule
-Latency of $F(x)$ (ms) & TODO & TODO & TODO \\
-Code size & TODO & TODO & TODO \\
-Error vs double reference & TODO & TODO & TODO \\
+Latency of $F(x)$ (ms/run) & 0.1 & 3.8 & 123.5 \\
+Speedup vs Step-3 latency & 3.00$\times$ & 2.92$\times$ & 2.88$\times$ \\
+Relative error vs double & 1.000e+00 & 1.000e+00 & 1.000e+00 \\
+Code size (application image) & N/A & N/A & N/A \\
 \bottomrule
 \end{tabular}
 }
 \end{table}
 
+The C4 run follows the same trend in timing (44 total ticks over 10 runs, i.e. 4.4\,ms/run) and shows the same correctness issue as C1/C2/C3. Specifically, the Step-4 outputs in this dataset are zero for all cases, yielding relative error 1.0 versus the double-precision reference. Therefore, the measured latency improvement cannot be treated as a valid functional acceleration result yet; it is only an integration-stage timing observation.
+
+\begin{table}[t]
+\centering
+\caption{Task-8 post-fit resource/timing snapshot (current build).}
+\label{tab:t8_resource}
+\scriptsize
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lr}
+\toprule
+Metric & Value \\
+\midrule
+ALMs & 3,793 \\
+Registers & 4,214 \\
+Block memory bits & 3,159,680 \\
+RAM blocks & 397 \\
+DSP blocks & 1 \\
+Worst setup slack (ns) & 3.205 \\
+Worst hold slack (ns) & 0.114 \\
+Fmax \texttt{sopc\_clk} (MHz) & 59.54 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+Compared with Task 7 Step-3, this build remains in essentially the same resource class and keeps timing closure at 50\,MHz with positive slack.
+
 \subsection{Pipeline Utilisation and Throughput}
-This subsection should state the effective initiation interval, compare theoretical throughput with measured throughput, and explain the limiting assumptions and bottlenecks, especially CPU blocking behavior, memory-system effects, and CI protocol overhead.
+RTL cycle-level measurements of the dual-input Task-8 prototype show 28 cycles per pair-call, i.e. 14 cycles/sample effective, while the Task-7 single-$f(x)$ baseline is 17 cycles/sample. This corresponds to an isolated arithmetic improvement of about $17/14\approx1.21\times$ in cycles/sample. At 50\,MHz, the idealized arithmetic throughput bound is therefore about $50\text{M}/14\approx3.57$\,M samples/s.
+
+From the current on-board Step-4 dataset, C3 uses 123.5\,ms/run for 65,281 samples, i.e. about 1.89\,$\mu$s/sample (approximately 0.53\,M samples/s). This is faster than Step-3 software-integrated throughput but still far below the isolated arithmetic bound, indicating substantial software/CI integration overhead remains. In addition, because current Step-4 outputs are functionally incorrect, throughput numbers should be interpreted as provisional integration diagnostics rather than final valid Task-8 performance.
 
 % =============================================================
 \section{Cross-Task Comparison and Discussion}

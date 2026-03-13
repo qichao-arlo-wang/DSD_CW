@@ -2,29 +2,20 @@
 
 //------------------------------------------------------------------------------
 // Purpose:
-//   Functional regression for Task 8 CI block task8_ci_f2_accum.
+//   Functional regression for stateless Task 8 CI block task8_ci_f2_accum.
 //
 // Coverage:
-//   - All opcodes (reset/read/pair accumulate/single accumulate/pair only/single only)
-//   - Running-sum consistency across mixed operation sequences
+//   - Software-style chained accumulation: acc_{k+1} = acc_k + f(x_k)
+//   - Deterministic vectors and randomized vectors
+//   - "Run reset" behavior by restarting chain with acc=0 in software
 //------------------------------------------------------------------------------
 module tb_task8_ci_f2_accum;
-    localparam logic [7:0] OP_PAIR_ACCUM = 8'd0;
-    localparam logic [7:0] OP_RESET_SUM = 8'd1;
-    localparam logic [7:0] OP_READ_SUM = 8'd2;
-    localparam logic [7:0] OP_SINGLE_A_ACCUM = 8'd3;
-    localparam logic [7:0] OP_SINGLE_B_ACCUM = 8'd4;
-    localparam logic [7:0] OP_PAIR_ONLY = 8'd5;
-    localparam logic [7:0] OP_SINGLE_A_ONLY = 8'd6;
-    localparam logic [7:0] OP_SINGLE_B_ONLY = 8'd7;
-
     logic clk;
     logic reset;
     logic clk_en;
     logic start;
     logic [31:0] dataa;
     logic [31:0] datab;
-    logic [7:0] n;
     logic done;
     logic [31:0] result;
 
@@ -35,7 +26,6 @@ module tb_task8_ci_f2_accum;
         .start(start),
         .dataa(dataa),
         .datab(datab),
-        .n(n),
         .done(done),
         .result(result)
     );
@@ -116,19 +106,18 @@ module tb_task8_ci_f2_accum;
         end
     endtask
 
-    task automatic call_cmd(
-        input logic [7:0] op,
-        input int unsigned xa,
-        input int unsigned xb,
+    task automatic call_accum(
+        input [31:0] acc_bits,
+        input [31:0] x_bits,
         output real got,
+        output [31:0] got_bits,
         output int cycles
     );
         int timeout;
         begin
             @(posedge clk);
-            dataa = int_to_fp32_bits(xa);
-            datab = int_to_fp32_bits(xb);
-            n = op;
+            dataa = acc_bits;
+            datab = x_bits;
             start = 1'b1;
 
             @(posedge clk);
@@ -143,23 +132,28 @@ module tb_task8_ci_f2_accum;
             end
 
             if (timeout >= 5000) begin
-                $fatal(1, "Timeout waiting for done (op=%0d)", op);
+                $fatal(1, "Timeout waiting for done");
             end
 
+            got_bits = result;
             got = fp32_bits_to_real(result);
-            $display("op=%0d xa=%0d xb=%0d cycles=%0d result=%f", op, xa, xb, cycles, got);
+            $display("acc_in=%f x=%f cycles=%0d acc_out=%f",
+                     fp32_bits_to_real(acc_bits), fp32_bits_to_real(x_bits), cycles, got);
         end
     endtask
 
     initial begin
+        int i;
         real got;
         real sum_ref;
-        real expected;
+        real x_real;
         int cycles;
-        int i;
-        int unsigned xa;
-        int unsigned xb;
-        int op_sel;
+        int total_cycles;
+        int unsigned xv;
+        logic [31:0] acc_bits;
+        logic [31:0] x_bits;
+        logic [31:0] got_bits;
+        int unsigned x_seq [0:7];
 
         clk = 1'b0;
         reset = 1'b1;
@@ -167,88 +161,49 @@ module tb_task8_ci_f2_accum;
         start = 1'b0;
         dataa = 32'd0;
         datab = 32'd0;
-        n = 8'd0;
 
         repeat (5) @(posedge clk);
         reset = 1'b0;
 
+        x_seq[0] = 0;
+        x_seq[1] = 2;
+        x_seq[2] = 4;
+        x_seq[3] = 8;
+        x_seq[4] = 12;
+        x_seq[5] = 20;
+        x_seq[6] = 24;
+        x_seq[7] = 31;
+
+        // Run-1: deterministic vector
         sum_ref = 0.0;
+        total_cycles = 0;
+        acc_bits = int_to_fp32_bits(0);
 
-        call_cmd(OP_RESET_SUM, 0, 0, got, cycles);
-        check_close("reset", got, 0.0);
-
-        call_cmd(OP_READ_SUM, 0, 0, got, cycles);
-        check_close("read_after_reset", got, 0.0);
-
-        expected = ref_f(8.0) + ref_f(3.0);
-        sum_ref = sum_ref + expected;
-        call_cmd(OP_PAIR_ACCUM, 8, 3, got, cycles);
-        check_close("pair_accum_8_3", got, sum_ref);
-
-        call_cmd(OP_READ_SUM, 0, 0, got, cycles);
-        check_close("read_after_pair", got, sum_ref);
-
-        expected = ref_f(5.0);
-        sum_ref = sum_ref + expected;
-        call_cmd(OP_SINGLE_A_ACCUM, 5, 0, got, cycles);
-        check_close("single_a_accum_5", got, sum_ref);
-
-        expected = ref_f(7.0);
-        sum_ref = sum_ref + expected;
-        call_cmd(OP_SINGLE_B_ACCUM, 0, 7, got, cycles);
-        check_close("single_b_accum_7", got, sum_ref);
-
-        expected = ref_f(2.0) + ref_f(4.0);
-        call_cmd(OP_PAIR_ONLY, 2, 4, got, cycles);
-        check_close("pair_only_2_4", got, expected);
-
-        call_cmd(OP_READ_SUM, 0, 0, got, cycles);
-        check_close("read_after_pair_only", got, sum_ref);
-
-        expected = ref_f(9.0);
-        call_cmd(OP_SINGLE_A_ONLY, 9, 0, got, cycles);
-        check_close("single_a_only_9", got, expected);
-
-        expected = ref_f(11.0);
-        call_cmd(OP_SINGLE_B_ONLY, 0, 11, got, cycles);
-        check_close("single_b_only_11", got, expected);
-
-        // Randomized mixed operations with bounded input range for stable tolerances.
-        for (i = 0; i < 20; i = i + 1) begin
-            xa = $urandom_range(0, 32);
-            xb = $urandom_range(0, 32);
-            op_sel = $urandom_range(0, 3);
-
-            case (op_sel)
-                0: begin
-                    expected = ref_f(xa) + ref_f(xb);
-                    sum_ref = sum_ref + expected;
-                    call_cmd(OP_PAIR_ACCUM, xa, xb, got, cycles);
-                    check_close("rand_pair_accum", got, sum_ref);
-                end
-                1: begin
-                    expected = ref_f(xa);
-                    sum_ref = sum_ref + expected;
-                    call_cmd(OP_SINGLE_A_ACCUM, xa, xb, got, cycles);
-                    check_close("rand_single_a_accum", got, sum_ref);
-                end
-                2: begin
-                    expected = ref_f(xb);
-                    sum_ref = sum_ref + expected;
-                    call_cmd(OP_SINGLE_B_ACCUM, xa, xb, got, cycles);
-                    check_close("rand_single_b_accum", got, sum_ref);
-                end
-                default: begin
-                    expected = ref_f(xa) + ref_f(xb);
-                    call_cmd(OP_PAIR_ONLY, xa, xb, got, cycles);
-                    check_close("rand_pair_only", got, expected);
-                end
-            endcase
+        for (i = 0; i < 8; i = i + 1) begin
+            x_real = x_seq[i];
+            x_bits = int_to_fp32_bits(x_seq[i]);
+            sum_ref = sum_ref + ref_f(x_real);
+            call_accum(acc_bits, x_bits, got, got_bits, cycles);
+            check_close("seq_accum", got, sum_ref);
+            total_cycles = total_cycles + cycles;
+            acc_bits = got_bits;
         end
 
-        call_cmd(OP_READ_SUM, 0, 0, got, cycles);
-        check_close("read_final_sum", got, sum_ref);
+        // Run-2: software reset via acc=0 plus randomized x values
+        sum_ref = 0.0;
+        acc_bits = int_to_fp32_bits(0);
+        for (i = 0; i < 20; i = i + 1) begin
+            xv = $urandom_range(2, 32);
+            x_real = xv;
+            x_bits = int_to_fp32_bits(xv);
+            sum_ref = sum_ref + ref_f(x_real);
+            call_accum(acc_bits, x_bits, got, got_bits, cycles);
+            check_close("rand_accum", got, sum_ref);
+            total_cycles = total_cycles + cycles;
+            acc_bits = got_bits;
+        end
 
+        $display("tb_task8_ci_f2_accum total_cycles=%0d", total_cycles);
         $display("tb_task8_ci_f2_accum PASSED");
         $finish;
     end

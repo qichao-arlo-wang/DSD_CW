@@ -36,12 +36,17 @@ set_module_property REPORT_HIERARCHY false
 # file sets
 # 
 add_fileset QUARTUS_SYNTH QUARTUS_SYNTH "" ""
-set_fileset_property QUARTUS_SYNTH TOP_LEVEL task7_ci_f_single
+set_fileset_property QUARTUS_SYNTH TOP_LEVEL task8_ci_f2_accum
 set_fileset_property QUARTUS_SYNTH ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property QUARTUS_SYNTH ENABLE_FILE_OVERWRITE_MODE false
-add_fileset_file task7_ci_f_single.sv SYSTEM_VERILOG PATH ../task7_code/rtl/ci_step3/task7_ci_f_single.sv TOP_LEVEL_FILE
-add_fileset_file task8_ci_f2_accum.sv SYSTEM_VERILOG PATH ../task7_code/rtl/task8/task8_ci_f2_accum.sv
+add_fileset_file task8_ci_f2_accum.sv SYSTEM_VERILOG PATH ../task7_code/rtl/task8/task8_ci_f2_accum.sv TOP_LEVEL_FILE
+add_fileset_file task7_ci_f_single.sv SYSTEM_VERILOG PATH ../task7_code/rtl/ci_step3/task7_ci_f_single.sv
+add_fileset_file task7_cordic_cos_multi_iter.sv SYSTEM_VERILOG PATH ../task7_code/rtl/core/task7_cordic_cos_multi_iter.sv
+add_fileset_file task7_fp32_to_fx.sv SYSTEM_VERILOG PATH ../task7_code/rtl/core/task7_fp32_to_fx.sv
+add_fileset_file task7_fx_to_fp32.sv SYSTEM_VERILOG PATH ../task7_code/rtl/core/task7_fx_to_fp32.sv
 add_fileset_file task7_fp_add_ip_unit.sv SYSTEM_VERILOG PATH ../task7_code/rtl/core/task7_fp_add_ip_unit.sv
+add_fileset_file task7_fp_mul_ip_unit.sv SYSTEM_VERILOG PATH ../task7_code/rtl/core/task7_fp_mul_ip_unit.sv
+add_fileset_file custom_fp_add.qip OTHER PATH custom_fp_add.qip
 add_fileset_file custom_fp_mul.qip OTHER PATH custom_fp_mul.qip
 
 
@@ -147,4 +152,3 @@ add_interface_port ncs_cis0 clk_en clk_en Input 1
 add_interface_port ncs_cis0 start start Input 1
 add_interface_port ncs_cis0 reset reset Input 1
 add_interface_port ncs_cis0 done done Output 1
-
