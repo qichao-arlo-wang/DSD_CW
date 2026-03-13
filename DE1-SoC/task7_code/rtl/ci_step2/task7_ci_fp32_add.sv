@@ -6,7 +6,7 @@
 //   Uses IP-backed FP add unit (task7_fp_add_ip_unit) with start/done.
 //------------------------------------------------------------------------------
 module task7_ci_fp32_add #(
-    parameter int ADD_LATENCY = 2
+    parameter int ADD_LATENCY = 3
 ) (
     input  logic        clk,
     input  logic        reset,

@@ -29,6 +29,10 @@
 #define CASE4_SEED 334u
 #define CASE4_MAXVAL 255.0f
 
+/* CI binding:
+ * mode 2 -> split operators (mul/add/sub/cos),
+ * mode 3 -> single fused f(x) operator.
+ */
 #if TASK7_MODE == 2
 
 #define CI_STEP2_MUL(a, b) ALT_CI_CUSTOM_FP_MUL_0((a), (b))
@@ -42,6 +46,7 @@
 
 #endif
 
+/* Per-operator profiling counters used in Step-2 breakdown reports. */
 typedef struct {
     unsigned long mul_ticks;
     unsigned long add_ticks;
@@ -53,12 +58,17 @@ typedef struct {
     unsigned long cos_calls;
 } profile_t;
 
+/* Test-case descriptor:
+ * step >= 0  -> arithmetic progression vector,
+ * step < 0   -> seeded random vector (C4).
+ */
 typedef struct {
     const char *tag;
     int len;
     float step;
 } case_cfg_t;
 
+/* Preserve IEEE-754 bit pattern when passing float through CI integer ports. */
 static inline uint32_t f32_to_u32(float x) {
     union {
         float f;
@@ -68,6 +78,7 @@ static inline uint32_t f32_to_u32(float x) {
     return v.u;
 }
 
+/* Restore IEEE-754 float from CI return word. */
 static inline float u32_to_f32(uint32_t x) {
     union {
         float f;
@@ -77,10 +88,12 @@ static inline float u32_to_f32(uint32_t x) {
     return v.f;
 }
 
+/* System tick helper used for coarse profiling around CI calls/functions. */
 static inline unsigned long now_ticks(void) {
     return (unsigned long)times(NULL);
 }
 
+/* Build deterministic vector for coursework C1/C2/C3 cases. */
 static void generate_vector(float x[], int len, float step) {
     int i;
 
@@ -90,6 +103,7 @@ static void generate_vector(float x[], int len, float step) {
     }
 }
 
+/* Build deterministic random vector for C4 using fixed seed. */
 static void generate_random_vector(float x[], int len) {
     int i;
     srand(CASE4_SEED);
@@ -101,6 +115,7 @@ static void generate_random_vector(float x[], int len) {
 
 #if TASK7_MODE == 2
 
+/* Step-2 CI wrapper with tick accounting (MUL). */
 static uint32_t ci_mul(uint32_t a, uint32_t b, profile_t *p) {
     unsigned long t0 = now_ticks();
     uint32_t r = CI_STEP2_MUL(a, b);
@@ -112,6 +127,7 @@ static uint32_t ci_mul(uint32_t a, uint32_t b, profile_t *p) {
     return r;
 }
 
+/* Step-2 CI wrapper with tick accounting (ADD). */
 static uint32_t ci_add(uint32_t a, uint32_t b, profile_t *p) {
     unsigned long t0 = now_ticks();
     uint32_t r = CI_STEP2_ADD(a, b);
@@ -123,6 +139,7 @@ static uint32_t ci_add(uint32_t a, uint32_t b, profile_t *p) {
     return r;
 }
 
+/* Step-2 CI wrapper with tick accounting (SUB). */
 static uint32_t ci_sub(uint32_t a, uint32_t b, profile_t *p) {
     unsigned long t0 = now_ticks();
     uint32_t r = CI_STEP2_SUB(a, b);
@@ -134,6 +151,7 @@ static uint32_t ci_sub(uint32_t a, uint32_t b, profile_t *p) {
     return r;
 }
 
+/* Step-2 CI wrapper with tick accounting (COS). */
 static uint32_t ci_cos(uint32_t a, profile_t *p) {
     unsigned long t0 = now_ticks();
     uint32_t r = CI_STEP2_COS(a, 0u);
@@ -149,6 +167,9 @@ static uint32_t ci_cos(uint32_t a, profile_t *p) {
 
 #if TASK7_MODE == 2
 
+/* Split-CI implementation of:
+ * f(x) = 0.5*x + x^3*cos((x-128)/128)
+ */
 static float eval_fx(float x, profile_t *p) {
 
     uint32_t xb = f32_to_u32(x);
@@ -173,6 +194,7 @@ static float eval_fx(float x, profile_t *p) {
 
 #else
 
+/* Fused single-CI implementation of f(x) (Step-3). */
 static float eval_fx(float x, profile_t *p) {
 
     uint32_t xb = f32_to_u32(x);
@@ -183,6 +205,7 @@ static float eval_fx(float x, profile_t *p) {
 
 #endif
 
+/* Compute full reduction F(X) = sum_i f(x_i). */
 static float compute_fx(const float x[], int len, profile_t *p) {
 
     float sum = 0.0f;
@@ -194,6 +217,7 @@ static float compute_fx(const float x[], int len, profile_t *p) {
     return sum;
 }
 
+/* Double-precision software reference used for correctness/error reporting. */
 static double compute_fx_ref_double(const float x[], int len) {
 
     double sum = 0.0;
@@ -209,6 +233,7 @@ static double compute_fx_ref_double(const float x[], int len) {
     return sum;
 }
 
+/* Print helper for one accelerator profile line. */
 static void print_profile_line(const char *name,
                                unsigned long ticks,
                                unsigned long calls) {
@@ -223,6 +248,9 @@ static void print_profile_line(const char *name,
            per_call);
 }
 
+/* Run one configured case:
+ * vector generation -> reference evaluation -> repeated HW runs -> report.
+ */
 static void run_case(const case_cfg_t *cfg, float xbuf[]) {
 
     profile_t profile = {0};
@@ -259,12 +287,14 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
 
 #if TASK7_MODE == 2
 
+    /* Sum of measured CI ticks in split-accelerator mode. */
     unsigned long accel_ticks =
         profile.mul_ticks +
         profile.add_ticks +
         profile.sub_ticks +
         profile.cos_ticks;
 
+    /* Residual time not inside measured CI wrappers (software overhead). */
     long long overhead_ticks =
         (long long)total_ticks -
         (long long)accel_ticks;
@@ -329,8 +359,10 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
 
 int main(void) {
 
+    /* Reused buffer sized for largest supported case (C3). */
     static float xbuf[MAX_VECTOR_LEN];
 
+    /* Course test cases plus final-assessment compatibility case. */
     const case_cfg_t cases[] = {
         {"C1", 52, 5.0f},
         {"C2", 2041, 1.0f / 8.0f},
@@ -346,6 +378,7 @@ int main(void) {
 
 #if TASK7_MODE == 2
 
+    /* Print split-CI opcodes for run traceability. */
     printf("CI opcodes: add=%d sub=%d mul=%d cos=%d\n",
            ALT_CI_CUSTOM_FP_ADD_0_N,
            ALT_CI_CUSTOM_FP_SUB_0_N,
@@ -354,6 +387,7 @@ int main(void) {
 
 #else
 
+    /* Print fused single-CI opcode for run traceability. */
     printf("CI opcode: single_fx=%d\n",
            ALT_CI_CUSTOM_SINGLE_F_ACCELERATOR_0_N);
 

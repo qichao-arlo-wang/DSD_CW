@@ -6,7 +6,7 @@
 //   Uses IP-backed FP multiply unit (task7_fp_mul_ip_unit) with start/done.
 //------------------------------------------------------------------------------
 module task7_ci_fp32_mul #(
-    parameter int MUL_LATENCY = 2
+    parameter int MUL_LATENCY = 3
 ) (
     input  logic        clk,
     input  logic        reset,

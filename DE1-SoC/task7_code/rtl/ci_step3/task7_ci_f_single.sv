@@ -19,8 +19,8 @@ module task7_ci_f_single #(
     parameter int CORDIC_FRAC = 22,
     parameter int CORDIC_ITER = 18,
     parameter int CORDIC_ITER_PER_CYCLE = 3,
-    parameter int MUL_LATENCY = 2,
-    parameter int ADD_LATENCY = 2
+    parameter int MUL_LATENCY = 3,
+    parameter int ADD_LATENCY = 3
 ) (
     input  logic clk,
     input  logic reset,
@@ -360,4 +360,3 @@ module task7_ci_f_single #(
         n_unused = n;
     end
 endmodule
-

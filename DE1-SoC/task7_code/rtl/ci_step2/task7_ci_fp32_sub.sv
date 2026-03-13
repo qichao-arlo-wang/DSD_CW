@@ -6,7 +6,7 @@
 //   Uses IP-backed FP subtract unit (task7_fp_sub_ip_unit) with start/done.
 //------------------------------------------------------------------------------
 module task7_ci_fp32_sub #(
-    parameter int SUB_LATENCY = 2
+    parameter int SUB_LATENCY = 3
 ) (
     input  logic        clk,
     input  logic        reset,

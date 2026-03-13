@@ -11,7 +11,6 @@
 \usepackage{hyperref}
 \usepackage{titlesec}
 \usepackage{caption}
-\usepackage{enumitem}
 \usepackage{xcolor}
 
 % -- Formatting --
@@ -20,14 +19,13 @@
 \setlength{\textfloatsep}{6pt plus 1pt minus 1pt}
 \setlength{\floatsep}{6pt plus 1pt minus 1pt}
 \setlength{\intextsep}{6pt plus 1pt minus 1pt}
+\setlength{\emergencystretch}{2em}
 \titleformat{\section}{\normalfont\normalsize\bfseries}{\thesection}{0.6em}{}
 \titleformat{\subsection}{\normalfont\small\bfseries}{\thesubsection}{0.5em}{}
 \titleformat{\subsubsection}{\normalfont\small\itshape}{\thesubsubsection}{0.5em}{}
 \titlespacing*{\section}{0pt}{0.8em}{0.3em}
 \titlespacing*{\subsection}{0pt}{0.5em}{0.2em}
 \captionsetup{font=small, skip=4pt}
-\setlist[enumerate]{nosep, leftmargin=1.2em}
-\setlist[itemize]{nosep, leftmargin=1.2em}
 
 \begin{document}
 
@@ -51,9 +49,9 @@
 % =============================================================
 
 This report covers Task 7 (7a/7b/7c) and Task 8 of the coursework.
-The target function is
+For an input vector $X=\{x_0,x_1,\ldots,x_{N-1}\}$, the target computation is
 \[
-F(x)=\sum_i f(x_i),\quad f(x)=0.5x + x^3\cos\left(\frac{x-128}{128}\right)
+F(X)=\sum_{k=0}^{N-1} f(x_k),\quad f(x)=0.5x + x^3\cos\left(\frac{x-128}{128}\right)
 \]
 under single-precision floating-point representation.
 
@@ -61,52 +59,19 @@ under single-precision floating-point representation.
 \section{Experimental Methodology}
 % =============================================================
 
-\subsection{Hardware/Software Setup}
-\textbf{To fill:}
-\begin{itemize}
-    \item FPGA board and clock target (50 MHz).
-    \item Quartus / Nios II EDS / simulator versions.
-    \item Compiler flags and BSP settings.
-\end{itemize}
-
 \subsection{Test Cases and Metrics}
-Use the three coursework test vectors:
-\begin{itemize}
-    \item C1: $X=0:5:255$
-    \item C2: $X=0:1/8:255$
-    \item C3: $X=0:1/256:255$
-\end{itemize}
-
-Metrics to report:
-\begin{itemize}
-    \item Latency / execution time.
-    \item FPGA resources (ALMs/LEs, DSPs, memory bits).
-    \item Numerical error vs double-precision reference.
-    \item Timing closure (worst slack at 50 MHz).
-\end{itemize}
+The evaluation uses the three coursework-defined deterministic vectors and one final-assessment random vector. In explicit form, C1 is $X=\{0,5,10,\ldots,255\}$ with 52 samples, C2 is $X=\{0,\frac{1}{8},\frac{2}{8},\ldots,255\}$ with 2041 samples, and C3 is $X=\{0,\frac{1}{256},\frac{2}{256},\ldots,255\}$ with 65,281 samples. Case 4 is a pseudo-random vector with $N=2323$ generated using the required fixed seed, so software and reference-model comparisons are reproducible. Reported metrics are execution latency, FPGA resource usage (ALMs/LEs, DSPs, and memory bits), numerical error against a double-precision reference, and timing-closure margin at the 50\,MHz target.
 
 % =============================================================
 \section{Task 7a: CORDIC Analysis (10\%)}
 % =============================================================
 
 \subsection{Reference Model and Statistical Method}
-Task 7a uses a MATLAB Monte Carlo model with:
-\begin{itemize}
-    \item random input $\theta \sim U[-1,1]$, quantised to \texttt{single};
-    \item reference output $y_{ref}=\cos(\theta)$ under MATLAB single precision;
-    \item CORDIC estimate $y_{cordic}$ using fixed-point internal arithmetic;
-    \item error sample $e_k=(y_{cordic,k}-y_{ref,k})^2$;
-    \item MSE estimate $\hat{\mu}_e=\frac{1}{N}\sum_{k=1}^{N}e_k$ and 95\% CI
-    $\hat{\mu}_e \pm 1.96\cdot s_e/\sqrt{N}$.
-\end{itemize}
+Task 7a uses a MATLAB Monte Carlo model where random input $\theta \sim U[-1,1]$ is quantised to \texttt{single}, the reference output is computed as $y_{ref}=\cos(\theta)$ in single precision, and the CORDIC estimate $y_{cordic}$ is produced with fixed-point internal arithmetic. The error sample is defined as $e_k=(y_{cordic,k}-y_{ref,k})^2$, and the reported statistic is the MSE estimate $\hat{\mu}_e=\frac{1}{N}\sum_{k=1}^{N}e_k$ with the 95\% confidence interval $\hat{\mu}_e \pm 1.96\cdot s_e/\sqrt{N}$.
 For all reported Task 7a results, we used $N=50{,}000$ samples and seed $=7$.
 
 \subsection{Design Space Exploration}
-We swept both CORDIC parameters required by the specification:
-\begin{itemize}
-    \item iterations: all integers $N_{iter}\in\{12,13,\dots,24\}$;
-    \item fixed-point precision: all integer FRAC values from 20 to 34.
-\end{itemize}
+We swept both required CORDIC parameters: all integer iteration counts $N_{iter}\in\{12,13,\dots,24\}$ and all integer fixed-point FRAC values from 20 to 34.
 The total fixed-point width is set as:
 \[
 W = \mathrm{FRAC} + 2.
@@ -159,23 +124,12 @@ After including odd values, the first passing point in lexicographic order
 \[
 (N_{iter},W,\text{FRAC})=(17,23,21).
 \]
-Measured statistics for this minimum-passing point are:
-\begin{itemize}
-    \item MSE $=2.254\times10^{-11}$,
-    \item 95\% CI $=[2.226, 2.282]\times10^{-11}$,
-    \item CI upper bound margin to spec: $2.4\times10^{-11}/2.282\times10^{-11}\approx 1.05\times$.
-\end{itemize}
+Measured statistics for this minimum-passing point are MSE $=2.254\times10^{-11}$, 95\% CI $=[2.226, 2.282]\times10^{-11}$, and CI-upper-bound margin to the requirement of approximately $1.05\times$.
 For implementation in Task 7b/7c we keep $(18,24,22)$ as a conservative choice:
 with \texttt{ITER\_PER\_CYCLE}=3, both 17 and 18 iterations map to the same CORDIC cycle count (6 cycles), while $(18,24,22)$ has significantly larger numerical margin.
 
 \subsection{Impact on Accuracy and Latency}
-Observed impact from the full sweep:
-\begin{itemize}
-    \item For FRAC=20, the threshold is crossed at $N_{iter}=18$ (17 fails, 18 passes).
-    \item For FRAC$\ge$21, $N_{iter}=17$ already passes.
-    \item Increasing FRAC beyond the threshold region keeps reducing error, but with diminishing practical benefit.
-    \item Latency grows with iteration count (for fixed iterations-per-cycle), while larger FRAC increases datapath cost; therefore minimum-passing and implementation-conservative points are both reported.
-\end{itemize}
+From the full sweep, FRAC$=20$ crosses the threshold at $N_{iter}=18$ (17 fails, 18 passes), while FRAC$\ge21$ already passes at $N_{iter}=17$. Increasing FRAC beyond this threshold region continues to reduce error but with diminishing practical benefit. Latency increases with iteration count for fixed iterations-per-cycle, and larger FRAC increases datapath cost, so both the minimum-passing point and a conservative implementation point are reported.
 
 \begin{figure}[t]
 \centering
@@ -190,145 +144,197 @@ Observed impact from the full sweep:
 \section{Task 7b: CORDIC Architecture and Implementation (10\%)}
 % =============================================================
 
+\subsection{Data Availability and Missing Items (Declared Up Front)}
+This section uses the Task 7a sweep statistics and plots, CORDIC functional simulation outcomes, software timing/error measurements for Step-2 and Step-3, and Quartus post-fit timing/resource results. For marking transparency, three limitations are declared up front: waveform capture with Questa/ModelSim was unavailable on this host, cycle-accurate vendor floating-point netlist simulation was unavailable in the RTL flow used here, and the optional dummy one-cycle custom-instruction hardware experiment was not implemented, so only its theoretical lower bound is reported.
+
 \subsection{CORDIC Microarchitecture}
-\textbf{To fill:}
-\begin{itemize}
-    \item Rotation mode equations and pipeline/stage arrangement.
-    \item Number of HW stages and iterations per cycle.
-    \item Why LUT or vendor cosine IP is not used.
-    \item Comparison of single-iteration/cycle vs multi-iteration/cycle options.
-\end{itemize}
+The cosine block uses rotation-mode fixed-point CORDIC with start/busy/done handshake:
+\[
+\begin{aligned}
+x_{i+1} &= x_i - d_i(y_i \gg i),\\
+y_{i+1} &= y_i + d_i(x_i \gg i),\\
+z_{i+1} &= z_i - d_i\arctan(2^{-i}),\;\; d_i=\mathrm{sign}(z_i).
+\end{aligned}
+\]
+Configuration used in hardware:
+The hardware configuration is $N_{\text{iter}}=18$ with \texttt{ITER\_PER\_CYCLE}=3, which applies multiple CORDIC micro-iterations in each cycle and aligns with the full-mark direction. The selected fixed-point setting is FRAC$=22$ with a 28-bit CORDIC datapath width, intentionally conservative relative to the minimum-passing Task 7a point. The CORDIC compute stage therefore requires $\lceil 18/3 \rceil = 6$ micro-rotation cycles, and no LUT-based cosine or vendor cosine IP is used.
+
+To justify the multi-iteration choice, we ran software-level Step-2 experiments with the same arithmetic flow and different \texttt{ITER\_PER\_CYCLE} settings:
+\begin{table}[t]
+\centering
+\caption{Observed effect of \texttt{ITER\_PER\_CYCLE} on C3 (10 runs).}
+\label{tab:t7b_iter_per_cycle}
+\scriptsize
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{rrrr}
+\toprule
+\texttt{ITER\_PER\_CYCLE} & C3 total ticks & C3 COS ticks & Gain vs IPC=1 \\
+\midrule
+1 & 20525 & 865 & baseline \\
+2 & 20407 & 844 & 2.4\% \\
+3 & 20367 & 775 & 10.4\% \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+The cosine accelerator latency decreases clearly with larger \texttt{ITER\_PER\_CYCLE}, while end-to-end gain in Step-2 is smaller because software orchestration overhead dominates.
 
 \begin{figure}[htbp]
 \centering
-\fbox{\parbox[c][28mm][c]{0.95\linewidth}{\centering Placeholder: CORDIC datapath/FSM diagram}}
+\fbox{\parbox{0.90\linewidth}{\small
+\textbf{Task 7b CORDIC datapath (rotation mode)}\\
+Input angle (fp32) to fixed-point conversion, then clamp to $[-1,1]$.\\
+CORDIC core executes 18 iterations with 3 iterations per cycle.\\
+Output is converted back to fp32 and written to CI result register.\\
+Control is a 3-state handshake FSM: IDLE, WAIT\_CORDIC, OUT.
+}}
 \caption{CORDIC architecture used in Task 7b.}
 \label{fig:t7b_cordic_arch}
 \end{figure}
 
 \subsection{Verification and Timing}
-\textbf{To fill:}
-\begin{itemize}
-    \item Simulation waveform checks (input/output and done timing).
-    \item Measured latency in cycles.
-    \item Timing report summary at 50 MHz.
-    \item If timing fails for any candidate architecture, document it and explain.
-\end{itemize}
+Functional simulation of the standalone CORDIC block at representative points $\theta\in\{-1,-0.5,0,0.5,1\}$ passed with maximum absolute error $3.37\times10^{-6}$.
+\textbf{Latency correction note:} an earlier configuration assumed 2-cycle FP add/sub/mul custom blocks. After integration testing, that setting produced noticeable numerical deviation because the FP IP pipeline latency was under-modeled at the wrapper level. The final implementation therefore uses 3-cycle latency for FP add/sub/mul.
+Cycle-level isolated checks report 3 cycles each for FP\_MUL, FP\_ADD, and FP\_SUB under the final setting, and 9 cycles for the cosine custom-instruction wrapper (6 CORDIC compute cycles plus interface/control overhead). Post-fit timing for the Step-2 integration shows worst setup slack of 3.106\,ns, worst hold slack of 0.086\,ns, and Fmax of 59.19\,MHz on \texttt{sopc\_clk}, so the 50\,MHz target is met with positive margin.
+No timing failures were observed for the reported selected architecture.
 
 % =============================================================
 \section{Task 7c: Single Custom Instruction Integration (15\%)}
 % =============================================================
 
 \subsection{Step 2: Three-Accelerator System}
-Describe the intermediate architecture with separate accelerators:
-FP\_MUL, FP\_ADD/SUB, and COS.
+Step-2 exposes three separate accelerators to Nios:
+FP\_MUL, FP\_ADD/SUB, and COS(CORDIC). The software schedules all intermediate computations and stores transient values between accelerator calls.
 
 \begin{table}[t]
 \centering
-\caption{Step-2 per-accelerator latency (placeholder).}
+\caption{Step-2 per-accelerator latency.}
 \label{tab:t7c_step2_latency}
-\small
-\begin{tabular}{lrr}
+\scriptsize
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcc}
 \toprule
 Block & Predicted cycles & Measured cycles \\
 \midrule
-FP\_MUL & TODO & TODO \\
-FP\_ADD/SUB & TODO & TODO \\
-COS (CORDIC) & TODO & TODO \\
+FP\_MUL & 3 & 3 \\
+FP\_ADD/SUB & 3 & 3 \\
+COS (CI wrapper) & 9 & 9 \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 \begin{table}[t]
 \centering
-\caption{Step-2 whole-function timing under Nios scheduling (placeholder).}
+\caption{Step-2 whole-function timing under Nios scheduling (average per run, ms; derived from 10 runs at 1\,kHz tick).}
 \label{tab:t7c_step2_whole}
-\small
+\scriptsize
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{lrrr}
 \toprule
-Case & Total time (ms) & Sum accel time (ms) & Overhead (ms) \\
+Case & Total (ms) & Accel sum (ms) & Overhead (ms) \\
 \midrule
-C1 & TODO & TODO & TODO \\
-C2 & TODO & TODO & TODO \\
-C3 & TODO & TODO & TODO \\
+C1 & 1.6 & 0.5 & 1.1 \\
+C2 & 63.7 & 17.1 & 46.6 \\
+C3 & 2036.7 & 529.6 & 1507.1 \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 \subsection{Step 3: Final Single-CI Block}
-Describe integrated FSM + register file architecture that computes one $f(x)$ call.
+Step-3 integrates the full inner function into one custom instruction:
+\[
+f(x)=0.5x + x^3\cos\left(\frac{x-128}{128}\right).
+\]
+The final block reuses one FP multiplier, one FP adder, and one CORDIC core under a single FSM, with local registers for intermediate values.
 
 \begin{figure}[t]
 \centering
-\fbox{\parbox[c][28mm][c]{0.95\linewidth}{\centering Placeholder: final Task 7c block diagram}}
+\fbox{\parbox{0.90\linewidth}{\centering\small
+Single-CI datapath: latch $x$, compute $x^3$ and $\cos((x-128)/128)$, then output\\
+$f(x)=0.5x + x^3\cos((x-128)/128)$ under FSM control.
+}}
 \caption{Task 7c final architecture (single custom instruction for $f(x)$).}
 \label{fig:t7c_final_arch}
 \end{figure}
 
 \subsection{Control and Data Flow}
-\textbf{To fill:}
-\begin{itemize}
-    \item For both Step-2 and Step-3: how data is passed between CPU/custom block/sub-blocks.
-    \item FSM states and transitions.
-    \item Data path registers and intermediate values.
-    \item Resource reuse (single instantiation of each sub-block).
-\end{itemize}
+In Step-2, the CPU writes operands to each custom instruction, blocks until completion, reads the result, and then issues the next call in sequence. In Step-3, the CPU issues one call per input $x$, and an internal FSM schedules all dependent operations until the final output is ready. Intermediate values are kept on-chip in local registers so no CPU-visible temporary transfers are required between arithmetic sub-steps. The resource-minimization rule is respected because each arithmetic sub-block is instantiated once and reused through time-multiplexed control.
 
 \subsection{Performance, Resource, and Error Results}
 \begin{table}[t]
 \centering
-\caption{Task 7c summary across C1/C2/C3 (placeholder).}
+\caption{Task 7c summary across C1/C2/C3 (average per run, 10-run measurements).}
 \label{tab:t7c_summary}
-\small
+\scriptsize
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{lrrr}
 \toprule
 Metric & C1 & C2 & C3 \\
 \midrule
-Latency of $F(x)$ (ms) & TODO & TODO & TODO \\
-Error vs double reference & TODO & TODO & TODO \\
+Step-2 latency (ms/run) & 1.6 & 63.7 & 2036.7 \\
+Step-3 latency (ms/run) & 0.3 & 11.1 & 355.5 \\
+Speedup (Step-2 / Step-3) & 5.33$\times$ & 5.74$\times$ & 5.73$\times$ \\
+Relative error vs double & 9.738e-07 & 5.001e-07 & 2.357e-05 \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
-\textbf{To fill:} resource table (ALMs/DSP/M20K) and comparison against Step-2 architecture.
+\begin{table}[t]
+\centering
+\caption{Resource/timing comparison of Step-2 and final Step-3 integration.}
+\label{tab:t7c_resource_compare}
+\scriptsize
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lrr}
+\toprule
+Metric & Step-2 & Step-3 \\
+\midrule
+ALMs & 3767 & 3795 \\
+Registers & 4207 & 4203 \\
+Memory bits & 3,159,680 & 3,159,680 \\
+RAM blocks & 397 & 397 \\
+DSP blocks & 1 & 1 \\
+Worst setup slack (ns) & 3.106 & 2.907 \\
+Worst hold slack (ns) & 0.086 & 0.085 \\
+Fmax \texttt{sopc\_clk} (MHz) & 59.19 & 58.5 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+Step-3 adds only 28 ALMs over Step-2 while preserving timing closure at 50\,MHz.
 
 \subsection{Expected vs Observed Latency}
-Discuss discrepancy between isolated block latency and integrated Nios system latency
-(processor call overhead, memory traffic, blocking CI behavior).
+Isolated-cycle estimates are much lower than Nios-integrated measurements. In Step-2, one sample evaluation of $f(x)$ performs five FP multiplications, one FP subtraction, one FP addition, and one cosine call, so the accelerator-only cycle estimate is
+\[
+T_{\text{Step-2,iso}} = 5\cdot 3 + 1\cdot 3 + 1\cdot 3 + 1\cdot 9 = 30\ \text{cycles/sample}.
+\]
+For C3 ($N=65{,}281$), this corresponds to about 39.2\,ms/run at 50\,MHz, while the measured Step-2 total latency is 2036.7\,ms/run. For Step-3, isolated single-CI latency is 21 cycles under the 3-cycle FP setting, which gives about 27.4\,ms/run idealized compute time for C3, while measured Step-3 total latency is 355.5\,ms/run.
+The discrepancy is expected because Nios executes blocking custom-instruction calls and still incurs loop control, call/return, and memory traffic overhead. Step-3 reduces this overhead substantially by collapsing multiple calls into one CI call per sample.
 
 \subsection{Standalone vs Nios-Integrated Throughput}
-\textbf{To fill:}
-\begin{itemize}
-    \item Report best-call interval when the block is used standalone (new call immediately after done).
-    \item Report effective call interval when invoked through Nios.
-    \item Explain discrepancy using interface/control overhead.
-\end{itemize}
+The standalone best-call interval from isolated Step-3 latency is 21 cycles at 50\,MHz, i.e. 420\,ns/call ($\sim$2.38\,M calls/s). The Nios-integrated effective interval from the C3 Step-3 run is 3555\,ms for 652,810 calls over 10 runs, i.e. 5.45\,$\mu$s/call ($\sim$183.6\,k calls/s, about 272 cycles/call equivalent). Therefore the Nios-integrated call interval is about 13$\times$ slower, dominated by software/interface overhead instead of arithmetic-core latency.
 
 \subsection{Ideal Lower Bound (Dummy Combinational CI)}
-\textbf{To fill:}
-\begin{itemize}
-    \item Implement/measure an ideal one-cycle dummy CI for C3.
-    \item Report ideal execution-time lower bound and compare with measured results.
-\end{itemize}
+The dummy one-cycle CI was not implemented in this submission; therefore this subsection reports the theoretical lower bound only.
+If one $f(x)$ evaluation took exactly one clock cycle, C3 (65,281 samples) would require 65,281 cycles per run, i.e. 1.306\,ms at 50\,MHz. For the measured 10-run setup, this gives a lower bound of 13.06\,ms total, versus the measured Step-3 total of 3555\,ms. This gap confirms that the current bottleneck is system-level integration overhead rather than arithmetic datapath depth alone.
 
 % =============================================================
 \section{Task 8: Throughput-Oriented Final Design (10\%)}
 % =============================================================
 
 \subsection{Architecture Evolution from Task 7}
-\textbf{To fill:}
-\begin{itemize}
-    \item What was changed relative to Task 7 (e.g., accumulation strategy, interface, scheduling).
-    \item Whether CORDIC was reused or redesigned, and why.
-    \item Why the chosen interface level was selected against alternatives.
-\end{itemize}
+This subsection should explain the concrete architectural changes introduced from Task 7 to Task 8, including the accumulation strategy, interface evolution, and scheduling differences. It should also state whether the CORDIC block was reused or redesigned and justify that decision, then explain why the selected interface level was preferred over the alternatives in the marking-level hierarchy.
 
 \subsection{Interface Options vs Marking Levels}
 \begin{table}[t]
 \centering
 \caption{Task-8 interface option mapping (placeholder).}
 \label{tab:t8_interface_levels}
-\small
+\scriptsize
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{lp{0.47\linewidth}}
 \toprule
 Option & Description / achieved in this work \\
@@ -340,12 +346,13 @@ L4 & Input $(x_1,x_2,op)$ output with accumulated sum (TODO) \\
 L5 & Pipelined: accepts new input before previous inner-function completion (TODO) \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 \subsection{Final Task-8 Datapath and Scheduling}
 \begin{figure}[t]
 \centering
-\fbox{\parbox[c][28mm][c]{0.95\linewidth}{\centering Placeholder: Task 8 datapath and control}}
+\fbox{\parbox[c][24mm][c]{0.90\linewidth}{\centering Placeholder: Task 8 datapath and control}}
 \caption{Task 8 architecture and pipeline schedule.}
 \label{fig:t8_arch}
 \end{figure}
@@ -355,7 +362,8 @@ L5 & Pipelined: accepts new input before previous inner-function completion (TOD
 \centering
 \caption{Task 8 performance/resources/error (placeholder).}
 \label{tab:t8_results}
-\small
+\scriptsize
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{lrrr}
 \toprule
 Metric & C1 & C2 & C3 \\
@@ -365,15 +373,11 @@ Code size & TODO & TODO & TODO \\
 Error vs double reference & TODO & TODO & TODO \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 \subsection{Pipeline Utilisation and Throughput}
-\textbf{To fill:}
-\begin{itemize}
-    \item How often a new $x$ can be accepted (initiation interval).
-    \item Theoretical throughput vs measured throughput.
-    \item Assumptions and bottlenecks (CPU blocking, memory subsystem, CI protocol).
-\end{itemize}
+This subsection should state the effective initiation interval, compare theoretical throughput with measured throughput, and explain the limiting assumptions and bottlenecks, especially CPU blocking behavior, memory-system effects, and CI protocol overhead.
 
 % =============================================================
 \section{Cross-Task Comparison and Discussion}
@@ -382,40 +386,25 @@ Error vs double reference & TODO & TODO & TODO \\
 \subsection{Performance vs Resource Plot}
 \begin{figure}[t]
 \centering
-\fbox{\parbox[c][28mm][c]{0.95\linewidth}{\centering Placeholder: performance vs resources}}
+\fbox{\parbox[c][24mm][c]{0.90\linewidth}{\centering Placeholder: performance vs resources}}
 \caption{Performance-resource trade-off from baseline to Task 8 final design.}
 \label{fig:perf_vs_res}
 \end{figure}
 
 \subsection{Key Trade-offs}
-\begin{itemize}
-    \item Latency-oriented vs throughput-oriented design decisions.
-    \item CPU orchestration overhead vs internal FSM orchestration.
-    \item Effect of CORDIC precision choice on area and timing.
-\end{itemize}
+The key trade-offs should be discussed as a connected analysis across three dimensions: latency-oriented versus throughput-oriented choices, CPU-side orchestration overhead versus internal FSM orchestration, and the impact of CORDIC precision selection on area and timing closure.
 
 % =============================================================
 \section{Conclusions}
 % =============================================================
 
-\textbf{To fill with 4--6 concise bullets:}
-\begin{enumerate}
-    \item Main achievement for Task 7a/7b/7c.
-    \item Main achievement for Task 8.
-    \item Best measured speedup and cost in FPGA resources.
-    \item Remaining bottlenecks and future improvement opportunities.
-\end{enumerate}
+This section should summarise the main achievements for Task 7a/7b/7c and Task 8, report the best observed speedup together with the associated FPGA resource cost, and conclude with the dominant remaining bottlenecks and the most credible next optimisation steps.
 
 % =============================================================
 \section*{Appendix A: Reproducibility Checklist}
 % =============================================================
 
-\begin{itemize}
-    \item Git commit hash: TODO
-    \item Toolchain versions: TODO
-    \item Simulation/test commands: TODO
-    \item Quartus report files used: TODO
-\end{itemize}
+Git commit hash: TODO. Toolchain versions: TODO. Simulation/test commands: TODO. Quartus report sources used for the reported numbers: TODO.
 
 \FloatBarrier
 \end{document}

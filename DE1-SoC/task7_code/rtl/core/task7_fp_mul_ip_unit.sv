@@ -7,7 +7,7 @@
 // - Define TASK7_FORCE_SIM only for pure RTL simulation without external FP IP.
 //------------------------------------------------------------------------------
 module task7_fp_mul_ip_unit #(
-    parameter int LATENCY = 2
+    parameter int LATENCY = 3
 ) (
     input  logic        clk,
     input  logic        reset,
@@ -21,6 +21,7 @@ module task7_fp_mul_ip_unit #(
 );
     localparam int EFF_LATENCY = (LATENCY < 1) ? 1 : LATENCY;
     localparam int CNT_W = (EFF_LATENCY <= 1) ? 1 : $clog2(EFF_LATENCY);
+    localparam logic [CNT_W-1:0] CNT_INIT = CNT_W'(EFF_LATENCY - 1);
 
     logic [CNT_W-1:0] cnt;
 
@@ -56,7 +57,7 @@ module task7_fp_mul_ip_unit #(
                 a_reg <= a;
                 b_reg <= b;
                 busy  <= 1'b1;
-                cnt   <= EFF_LATENCY - 1;
+                cnt   <= CNT_INIT;
             end else if (busy) begin
                 if (cnt == 0) begin
                     busy   <= 1'b0;
@@ -98,7 +99,7 @@ module task7_fp_mul_ip_unit #(
 
             if (start && !busy) begin
                 busy           <= 1'b1;
-                cnt            <= EFF_LATENCY - 1;
+                cnt            <= CNT_INIT;
                 pending_result <= fp_mul_model(a, b);
             end else if (busy) begin
                 if (cnt == 0) begin
