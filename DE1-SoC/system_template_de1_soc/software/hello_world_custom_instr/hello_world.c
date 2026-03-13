@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/times.h>
 #include <unistd.h>
 
@@ -29,6 +30,15 @@
 #define CASE4_SEED 334u
 #define CASE4_MAXVAL 255.0f
 
+/*
+ * Step-4 debug controls.
+ * Set TASK8_DEBUG to 0 to silence all extra debug prints.
+ */
+#define TASK8_DEBUG 1
+#define TASK8_DEBUG_CASE_TAG "C1"
+#define TASK8_DEBUG_VECTOR_HEAD 12
+#define TASK8_DEBUG_CALLS 20
+
 /* CI binding:
  * mode 2 -> split operators (mul/add/sub/cos),
  * mode 3 -> single fused f(x) operator.
@@ -49,6 +59,13 @@
 
 #define CI_STEP8_ACCUM(acc, x) ALT_CI_CUSTOM_F_ACCUM_0((acc), (x))
 
+#endif
+
+#if TASK7_MODE == 4
+/* Runtime context used by Step-4 debug prints (set in run_case). */
+static const char *g_dbg_case_tag = NULL;
+static int g_dbg_run_index = -1;
+static int g_dbg_enable = 0;
 #endif
 
 /* Per-operator profiling counters used in Step-2 breakdown reports. */
@@ -92,6 +109,51 @@ static inline float u32_to_f32(uint32_t x) {
     v.u = x;
     return v.f;
 }
+
+#if TASK7_MODE == 4
+/* Print the first few vector elements with bit patterns for CI debugging. */
+static void debug_print_vector_head(const case_cfg_t *cfg, const float xbuf[]) {
+    int n = cfg->len;
+    if (n > TASK8_DEBUG_VECTOR_HEAD)
+        n = TASK8_DEBUG_VECTOR_HEAD;
+
+    printf("[Step-4][%s][debug] vector head (%d/%d):\n",
+           cfg->tag,
+           n,
+           cfg->len);
+
+    for (int i = 0; i < n; i++) {
+        uint32_t xb = f32_to_u32(xbuf[i]);
+        printf("  i=%d x=% .9f xb=0x%08lx\n",
+               i,
+               (double)xbuf[i],
+               (unsigned long)xb);
+    }
+}
+
+/* Split software reference into even/odd indices to check dropped-call pattern. */
+static void debug_print_ref_even_odd(const case_cfg_t *cfg, const float xbuf[]) {
+    double sum_even = 0.0;
+    double sum_odd = 0.0;
+
+    for (int i = 0; i < cfg->len; i++) {
+        double xd = (double)xbuf[i];
+        double angle = (xd - 128.0) / 128.0;
+        double fx = 0.5 * xd + xd * xd * xd * cos(angle);
+
+        if ((i & 1) == 0)
+            sum_even += fx;
+        else
+            sum_odd += fx;
+    }
+
+    printf("[Step-4][%s][debug] ref-even=%.10e ref-odd=%.10e odd/total=%.6f\n",
+           cfg->tag,
+           sum_even,
+           sum_odd,
+           (sum_even + sum_odd == 0.0) ? 0.0 : (sum_odd / (sum_even + sum_odd)));
+}
+#endif
 
 /* System tick helper used for coarse profiling around CI calls/functions. */
 static inline unsigned long now_ticks(void) {
@@ -220,10 +282,25 @@ static float compute_fx(const float x[], int len, profile_t *p) {
     uint32_t acc = f32_to_u32(0.0f);
 
     for (int i = 0; i < len; i++) {
-
+        uint32_t acc_before = acc;
         uint32_t xb = f32_to_u32(x[i]);
         acc = CI_STEP8_ACCUM(acc, xb);
 
+#if TASK8_DEBUG
+        if (g_dbg_enable && i < TASK8_DEBUG_CALLS) {
+            printf("[Step-4][%s][run=%d][i=%d] x=% .9f xb=0x%08lx "
+                   "acc_in=0x%08lx(% .9e) acc_out=0x%08lx(% .9e)\n",
+                   g_dbg_case_tag,
+                   g_dbg_run_index,
+                   i,
+                   (double)x[i],
+                   (unsigned long)xb,
+                   (unsigned long)acc_before,
+                   (double)u32_to_f32(acc_before),
+                   (unsigned long)acc,
+                   (double)u32_to_f32(acc));
+        }
+#endif
     }
 
     sum = u32_to_f32(acc);
@@ -278,6 +355,7 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
     profile_t profile = {0};
 
     float hw_out = 0.0f;
+    float hw_last_run = 0.0f;
 
     double ref_out;
     double abs_err;
@@ -292,12 +370,37 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
     else
         generate_random_vector(xbuf, cfg->len);
 
+#if TASK7_MODE == 4
+#if TASK8_DEBUG
+    debug_print_vector_head(cfg, xbuf);
+    debug_print_ref_even_odd(cfg, xbuf);
+#endif
+#endif
+
     ref_out = compute_fx_ref_double(xbuf, cfg->len);
 
     t0 = now_ticks();
 
     for (int k = 0; k < NUM_RUNS; k++) {
+#if TASK7_MODE == 4
+#if TASK8_DEBUG
+        g_dbg_case_tag = cfg->tag;
+        g_dbg_run_index = k;
+        g_dbg_enable =
+            (strcmp(cfg->tag, TASK8_DEBUG_CASE_TAG) == 0) && (k == 0);
+#endif
+#endif
         hw_out = compute_fx(xbuf, cfg->len, &profile);
+        hw_last_run = hw_out;
+
+#if TASK7_MODE == 4
+#if TASK8_DEBUG
+        printf("[Step-4][%s][run=%d] F_hw_run=%.10e\n",
+               cfg->tag,
+               k,
+               (double)hw_out);
+#endif
+#endif
     }
 
     t1 = now_ticks();
@@ -395,6 +498,13 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
            cfg->tag,
            total_ticks,
            (unsigned long)(total_ticks / NUM_RUNS));
+
+#if TASK8_DEBUG
+    printf("[Step-4][%s][debug] final_run_hw=%.10e delta_vs_last=%.3e\n",
+           cfg->tag,
+           (double)hw_out,
+           fabs((double)hw_out - (double)hw_last_run));
+#endif
     
 #endif
 }
