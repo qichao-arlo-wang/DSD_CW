@@ -18,7 +18,7 @@
  * (ADD/SUB/MUL/COS) so we can profile accelerator usage and software overhead.
  */
 
-#define TASK7_MODE 3
+#define TASK7_MODE 4
 
 /* Number of repeated runs per case to smooth timing noise. */
 #define NUM_RUNS 10
@@ -32,6 +32,7 @@
 /* CI binding:
  * mode 2 -> split operators (mul/add/sub/cos),
  * mode 3 -> single fused f(x) operator.
+ * mode 4 -> task8 full accu fx
  */
 #if TASK7_MODE == 2
 
@@ -43,6 +44,10 @@
 #elif TASK7_MODE == 3
 
 #define CI_STEP3_FX(a) ALT_CI_CUSTOM_SINGLE_F_ACCELERATOR_0((a), 0u)
+
+#elif TASK7_MODE == 4
+
+#define CI_STEP8_ACCUM(acc, x) ALT_CI_CUSTOM_F_ACCUM_0((acc), (x))
 
 #endif
 
@@ -192,7 +197,7 @@ static float eval_fx(float x, profile_t *p) {
     return u32_to_f32(fx);
 }
 
-#else
+#elif TASK7_MODE == 3
 
 /* Fused single-CI implementation of f(x) (Step-3). */
 static float eval_fx(float x, profile_t *p) {
@@ -210,9 +215,26 @@ static float compute_fx(const float x[], int len, profile_t *p) {
 
     float sum = 0.0f;
 
+#if TASK7_MODE == 4
+
+    uint32_t acc = f32_to_u32(0.0f);
+
+    for (int i = 0; i < len; i++) {
+
+        uint32_t xb = f32_to_u32(x[i]);
+        acc = CI_STEP8_ACCUM(acc, xb);
+
+    }
+
+    sum = u32_to_f32(acc);
+
+#else
+
     for (int i = 0; i < len; i++) {
         sum += eval_fx(x[i], p);
     }
+
+#endif
 
     return sum;
 }
@@ -334,7 +356,7 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
     printf("[Step-2][%s] ", cfg->tag);
     print_profile_line("cos", profile.cos_ticks, profile.cos_calls);
 
-#else
+#elif TASK7_MODE == 3
 
     printf("\n[Step-3][%s] len=%d step=%.9g runs=%d\n",
            cfg->tag,
@@ -354,6 +376,26 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
            total_ticks,
            (unsigned long)(total_ticks / NUM_RUNS));
 
+#elif TASK7_MODE == 4
+
+    printf("\n[Step-4][%s] len=%d step=%.9g runs=%d\n",
+           cfg->tag,
+           cfg->len,
+           (double)cfg->step,
+           NUM_RUNS);
+
+    printf("[Step-4][%s] F_hw=%.10e F_ref=%.10e abs_err=%.3e rel_err=%.3e\n",
+           cfg->tag,
+           (double)hw_out,
+           ref_out,
+           abs_err,
+           rel_err);
+
+    printf("[Step-4][%s] total=%lu ticks avg=%lu ticks/run\n",
+           cfg->tag,
+           total_ticks,
+           (unsigned long)(total_ticks / NUM_RUNS));
+    
 #endif
 }
 
@@ -375,23 +417,6 @@ int main(void) {
 
     printf("Task7 software run started. tick_hz=%d\n",
            ALT_SYS_CLK_TICKS_PER_SEC);
-
-#if TASK7_MODE == 2
-
-    /* Print split-CI opcodes for run traceability. */
-    printf("CI opcodes: add=%d sub=%d mul=%d cos=%d\n",
-           ALT_CI_CUSTOM_FP_ADD_0_N,
-           ALT_CI_CUSTOM_FP_SUB_0_N,
-           ALT_CI_CUSTOM_FP_MUL_0_N,
-           ALT_CI_CUSTOM_COS_N);
-
-#else
-
-    /* Print fused single-CI opcode for run traceability. */
-    printf("CI opcode: single_fx=%d\n",
-           ALT_CI_CUSTOM_SINGLE_F_ACCELERATOR_0_N);
-
-#endif
 
     for (int i = 0; i < case_count; i++) {
         run_case(&cases[i], xbuf);
