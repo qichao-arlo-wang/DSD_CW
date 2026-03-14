@@ -8,17 +8,17 @@
 #include <system.h>
 
 /*
- * Task 7 Step-2 software driver
+ * Task 7 software driver.
  *
- * This program evaluates:
- *   f(x) = 0.5*x + x^3*cos((x-128)/128)
- * and then sums f(x) over vector cases C1/C2/C3.
- *
- * The arithmetic datapath is intentionally mapped to split custom instructions
- * (ADD/SUB/MUL/COS) so we can profile accelerator usage and software overhead.
+ * Default mode in this file is Step-2 (split CI path) for Task 7b reruns.
+ * Output is intentionally kept concise to reduce measurement perturbation.
  */
 
-#define TASK7_MODE 4
+#define TASK7_MODE 2
+
+/* 0: only coarse total ticks around the whole run (recommended for rerun timing). */
+/* 1: also record per-CI call wrapper timing/counters (adds perturbation). */
+#define STEP2_PROFILE_INNER 0
 
 /* Number of repeated runs per case to smooth timing noise. */
 #define NUM_RUNS 10
@@ -57,7 +57,7 @@
 
 #endif
 
-/* Per-operator profiling counters used in Step-2 breakdown reports. */
+/* Optional per-operator profiling counters for Step-2 detailed breakdown. */
 typedef struct {
     unsigned long mul_ticks;
     unsigned long add_ticks;
@@ -104,7 +104,7 @@ static inline unsigned long now_ticks(void) {
     return (unsigned long)times(NULL);
 }
 
-/* Build deterministic vector for coursework C1/C2/C3 cases. */
+/* Build deterministic vector for arithmetic progression cases. */
 static void generate_vector(float x[], int len, float step) {
     int i;
 
@@ -128,6 +128,7 @@ static void generate_random_vector(float x[], int len) {
 
 /* Step-2 CI wrapper with tick accounting (MUL). */
 static uint32_t ci_mul(uint32_t a, uint32_t b, profile_t *p) {
+#if STEP2_PROFILE_INNER
     unsigned long t0 = now_ticks();
     uint32_t r = CI_STEP2_MUL(a, b);
     unsigned long t1 = now_ticks();
@@ -136,10 +137,15 @@ static uint32_t ci_mul(uint32_t a, uint32_t b, profile_t *p) {
     p->mul_calls++;
 
     return r;
+#else
+    (void)p;
+    return CI_STEP2_MUL(a, b);
+#endif
 }
 
 /* Step-2 CI wrapper with tick accounting (ADD). */
 static uint32_t ci_add(uint32_t a, uint32_t b, profile_t *p) {
+#if STEP2_PROFILE_INNER
     unsigned long t0 = now_ticks();
     uint32_t r = CI_STEP2_ADD(a, b);
     unsigned long t1 = now_ticks();
@@ -148,10 +154,15 @@ static uint32_t ci_add(uint32_t a, uint32_t b, profile_t *p) {
     p->add_calls++;
 
     return r;
+#else
+    (void)p;
+    return CI_STEP2_ADD(a, b);
+#endif
 }
 
 /* Step-2 CI wrapper with tick accounting (SUB). */
 static uint32_t ci_sub(uint32_t a, uint32_t b, profile_t *p) {
+#if STEP2_PROFILE_INNER
     unsigned long t0 = now_ticks();
     uint32_t r = CI_STEP2_SUB(a, b);
     unsigned long t1 = now_ticks();
@@ -160,10 +171,15 @@ static uint32_t ci_sub(uint32_t a, uint32_t b, profile_t *p) {
     p->sub_calls++;
 
     return r;
+#else
+    (void)p;
+    return CI_STEP2_SUB(a, b);
+#endif
 }
 
 /* Step-2 CI wrapper with tick accounting (COS). */
 static uint32_t ci_cos(uint32_t a, profile_t *p) {
+#if STEP2_PROFILE_INNER
     unsigned long t0 = now_ticks();
     uint32_t r = CI_STEP2_COS(a, 0u);
     unsigned long t1 = now_ticks();
@@ -172,6 +188,10 @@ static uint32_t ci_cos(uint32_t a, profile_t *p) {
     p->cos_calls++;
 
     return r;
+#else
+    (void)p;
+    return CI_STEP2_COS(a, 0u);
+#endif
 }
 
 #endif
@@ -274,6 +294,7 @@ static double compute_fx_ref_double(const float x[], int len) {
 }
 
 /* Print helper for one accelerator profile line. */
+#if TASK7_MODE == 2 && STEP2_PROFILE_INNER
 static void print_profile_line(const char *name,
                                unsigned long ticks,
                                unsigned long calls) {
@@ -287,6 +308,7 @@ static void print_profile_line(const char *name,
            calls,
            per_call);
 }
+#endif
 
 /* Run one configured case:
  * vector generation -> reference evaluation -> repeated HW runs -> report.
@@ -327,6 +349,7 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
 
 #if TASK7_MODE == 2
 
+#if STEP2_PROFILE_INNER
     /* Sum of measured CI ticks in split-accelerator mode. */
     unsigned long accel_ticks =
         profile.mul_ticks +
@@ -338,6 +361,7 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
     long long overhead_ticks =
         (long long)total_ticks -
         (long long)accel_ticks;
+#endif
 
     printf("\n[Step-2][%s] len=%d step=%.9g runs=%d\n",
            cfg->tag,
@@ -357,6 +381,7 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
            total_ticks,
            (unsigned long)(total_ticks / NUM_RUNS));
 
+#if STEP2_PROFILE_INNER
     printf("[Step-2][%s] accel_sum=%lu ticks overhead=%lld ticks\n",
            cfg->tag,
            accel_ticks,
@@ -373,6 +398,7 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
 
     printf("[Step-2][%s] ", cfg->tag);
     print_profile_line("cos", profile.cos_ticks, profile.cos_calls);
+#endif
 
 #elif TASK7_MODE == 3
 
@@ -422,9 +448,8 @@ int main(void) {
     /* Reused buffer sized for largest supported case (C3). */
     static float xbuf[MAX_VECTOR_LEN];
 
-    /* Course test cases plus final-assessment compatibility case. */
+    /* Active test cases plus final-assessment compatibility case. */
     const case_cfg_t cases[] = {
-        {"C1", 52, 5.0f},
         {"C2", 2041, 1.0f / 8.0f},
         {"C3", 65281, 1.0f / 256.0f},
         {"C4", CASE4_LEN, -1.0f},

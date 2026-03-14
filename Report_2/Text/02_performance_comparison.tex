@@ -1,0 +1,48 @@
+% ============================================================
+\section{Performance Comparison}
+% ============================================================
+
+\subsection{Latency Across Configurations}
+
+Unless stated otherwise, all latency results in this section were obtained using \textbf{\texttt{cosf}} (single-precision) and compiler optimisation level \textbf{-O2} (with debug enabled), averaged over 20 runs. 
+
+\begin{table}[H]
+\centering
+\caption{Average Latency (Ticks, -O2)}
+\begin{tabular}{lcccc}
+\toprule
+Variant & Case1 & Case2 & Case3 & Case4 \\
+\midrule
+V3 (SW baseline) & 10    & 435   & 14381 & 505 \\
+V4 (NiosII HW mul) & 5     & 204   & 6563  & 232 \\
+V6 (FP hardware) & \multicolumn{4}{c}{\textit{[to be filled]}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The results show approximately linear scaling with $N$ across configurations, consistent with the $\mathcal{O}(N)$ structure of the summation. 
+Enabling Nios~II hardware multiplier support (V4) provides a consistent $\sim 2\times$ speedup over the software baseline (V3), indicating that multiplication dominates a substantial portion of the runtime at this stage.
+
+\subsection{Effect of \texttt{cos} vs \texttt{cosf}}
+
+In this experiment, the data were collected under configuration \textbf{V4} (i.e., only Nios~II hardware multiplier support enabled, 3$\times$16-bit multipliers), compiled with \textbf{-O2}. 
+All other computation remained software-based.
+
+\begin{table}[H]
+\centering
+\caption{\texttt{cosf} vs \texttt{cos} (Ticks, V4, -O2)}
+\begin{tabular}{lccc}
+\toprule
+Case & cosf & cos & Speedup (cosf vs cos) \\
+\midrule
+1 & 5    & 7    & 1.40$\times$ \\
+2 & 204  & 309  & 1.51$\times$ \\
+3 & 6563 & 9942 & 1.51$\times$ \\
+4 & 232  & 356  & 1.53$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Using \texttt{cosf} consistently reduces latency across all test cases, delivering a speedup of approximately \textbf{$1.4\times$ to $1.5\times$} compared to \texttt{cos}. 
+This is expected because \texttt{cos} typically performs double-precision computation and introduces additional conversion overhead, whereas \texttt{cosf} evaluates the trigonometric function directly in single precision. 
+The results indicate that trigonometric evaluation remains a major contributor to runtime even with multiplier acceleration, motivating further hardware support for floating-point and transcendental operations in later tasks.

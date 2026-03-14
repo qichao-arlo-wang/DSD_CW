@@ -1,0 +1,28 @@
+% ============================================================
+\section{Design Discussion}
+
+\subsection{Resources analysis}
+PLACEHOLDER
+
+compare the number of DSPs, registers etc.
+
+\subsection{Impact of Hardware Multiplier}
+
+Enabling the Nios~II embedded multiplier reduces latency because the computation of $F(x)$ involves several multiplications per iteration, particularly in the evaluation of $x^3$. 
+Although floating-point operations are still emulated in software, these routines internally rely on integer-level mantissa multiplication. 
+Providing dedicated hardware for integer multiplication therefore accelerates the most computationally intensive part of the floating-point multiply operation.
+
+The trigonometric term remains software-based. 
+Functions such as \texttt{cosf} are implemented using polynomial approximations, which require multiple floating-point operations internally. 
+As a result, while hardware multiplier support delivers a clear speedup, the $\cos(\cdot)$ evaluation continues to be a major contributor to total runtime.
+
+
+\subsection{Floating-Point Hardware Units}
+
+Mapping floating-point addition, subtraction and multiplication to dedicated hardware units further reduces execution time by eliminating the need for full software emulation of IEEE-754 operations. 
+In this configuration, the arithmetic core (including mantissa multiplication, exponent alignment, normalisation and rounding) is implemented directly in hardware, significantly shortening the latency of each floating-point operation compared to the software baseline.
+
+However, the Nios~II custom instruction interface is blocking in nature: the processor stalls until the custom instruction asserts completion. 
+As a result, even if the floating-point unit itself is internally pipelined, the CPU cannot issue new dependent operations while waiting for the current one to finish. 
+This limits effective pipeline utilisation and prevents full throughput exploitation, especially within a sequential loop such as the evaluation of $F(x)$. 
+Consequently, while hardware floating-point units reduce per-operation latency, the achievable system-level speedup is constrained by the processor--accelerator interaction model.

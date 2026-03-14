@@ -1,0 +1,21 @@
+% ============================================================
+\subsection{Accuracy Comparison}
+
+\begin{table}[H]
+\centering
+\caption{Relative Error vs Python (double-precision reference)}
+\begin{tabular}{lccc}
+\toprule
+Variant & Case1 & Case2 & Case3 \\
+\midrule
+Python (ref.) & 0 & 0 & 0 \\
+V3 & $\approx 0$ & $2.32\times 10^{-7}$ & $2.35\times 10^{-5}$ \\
+V4 & $\approx 0$ & $2.32\times 10^{-7}$ & $2.35\times 10^{-5}$ \\
+V6 & \multicolumn{3}{c}{\textit{[to be filled]}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Numerical deviations generally increase with input size due to finite-precision effects and the accumulation of rounding errors in long summations. 
+Importantly, enabling hardware multiplier support (V4) does not change the numerical outputs compared to the software baseline (V3), indicating that V4 improves performance without altering numerical correctness. 
+Case 4 is omitted from this accuracy comparison because the random vector generation differs between the C implementation (\texttt{rand()}) and the Python implementation (e.g., NumPy RNG); therefore, even with the same seed, the generated input sequences are not identical and the resulting $F(x)$ values are not directly comparable.

@@ -1,0 +1,24 @@
+% Prints a list of symbols. You can create/ change the categories in the preamble.tex file. 
+% Learn more about nomenclature: https://www.overleaf.com/learn/latex/Nomenclatures
+%
+% Delete/change the text and write your Nomenclature here:
+%------------------------------------
+
+\nomenclature[A, 02]{\(c\)}{\href{https://physics.nist.gov/cgi-bin/cuu/Value?c}
+{Speed of light in a vacuum}
+\nomunit{\SI{299792458}{\meter\per\second}}}
+\nomenclature[A, 03]{\(h\)}{\href{https://physics.nist.gov/cgi-bin/cuu/Value?h}
+{Planck constant}
+\nomunit{\SI[group-digits=false]{6.62607015e-34}{\joule\per\hertz}}}
+\nomenclature[A, 01]{\(G\)}{\href{https://physics.nist.gov/cgi-bin/cuu/Value?bg}
+{Gravitational constant} 
+\nomunit{\SI[group-digits=false]{6.67430e-11}{\meter\cubed\per\kilogram\per\second\squared}}}
+\nomenclature[B, 03]{\(\mathbb{R}\)}{Real numbers}
+\nomenclature[B, 02]{\(\pi\)}{Pi}
+\nomenclature[B, 01]{\(e\)}{Euler's constant}
+\nomenclature[C]{\(V\)}{Constant volume}
+\nomenclature[C]{\(\rho\)}{Friction index}
+
+% Print statement:
+%--------------------
+\printnomenclature

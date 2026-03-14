@@ -1,0 +1,27 @@
+\subsection{Effect of Compiler Optimisation Level}
+
+To quantify the impact of compiler optimisation, we recompiled the same code under configuration \textbf{V4} using different optimisation levels (\textbf{-O0}, \textbf{-O1}, \textbf{-O2}, \textbf{-O3}, \textbf{-Ofast}). 
+All measurements were obtained using \textbf{\texttt{cosf}} and averaged over 20 runs, consistent with the methodology used in the previous sections.
+
+\begin{table}[H]
+\centering
+\caption{Latency vs Optimisation Level (Ticks, V4, cosf)}
+\begin{tabular}{lcccc}
+\toprule
+Opt. level & Case1 & Case2 & Case3 & Case4 \\
+\midrule
+-O0 (off) & 5 & 206 & 6620 & 237 \\
+-O1       & 5 & 202 & 6477 & 235 \\
+-O2       & 5 & 204 & 6563 & 232 \\
+-O3       & 5 & 204 & 6565 & 232 \\
+-Os (size)& 5 & 201 & 6452 & 234 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+From Table 4, changing the optimisation level has only a modest impact on latency in configuration \textbf{V4}. 
+For the larger workloads (Case2--Case4), \textbf{-O1} provides the best or near-best results (e.g., Case2: 202 vs 206 ticks at -O0), while \textbf{-O2/-O3} are very similar to each other and do not consistently outperform -O1. 
+This suggests the runtime is dominated by library calls (notably \texttt{cosf}) and fixed per-iteration overheads that are not substantially improved by further loop-level compiler optimisations.
+
+The \textbf{-Os} setting achieves comparable performance to \textbf{-O1/-O2} (and is slightly better in Case3), indicating that optimising for code size does not significantly harm execution time for this benchmark. 
+Overall, \textbf{-O2} is retained as the default for consistency with the rest of the report, although the measured differences between \textbf{-O1}, \textbf{-O2}, and \textbf{-O3} are small under this workload.

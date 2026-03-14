@@ -1,0 +1,37 @@
+% ============================================================
+\section{Scope and Methodology}
+
+This report covers \textbf{Tasks 3--6} and evaluates the acceleration of
+
+\[
+F(x)=\sum \left(0.5x + x^3\cos\left(\frac{x-128}{128}\right)\right)
+\]
+
+for \textbf{single-precision} input vectors.
+
+Four test cases are used throughout the evaluation.\\
+Test Case 1 uses $X = 0:5:255$.\\
+Test Case 2 uses $X = 0:\frac{1}{8}:255$.\\
+Test Case 3 uses $X = 0:\frac{1}{256}:255$.\\
+Test Case 4 consists of a random vector of length $N=2323$, generated using seed 334.\\
+
+All experiments were conducted at 50\,MHz.
+Latency is reported in clock ticks at 50\,MHz.
+Each configuration was executed 20 times and the average value is reported.
+
+% ============================================================
+\section{System Variants}
+
+To evaluate the effect of architectural modifications, the following system configurations were analysed:
+
+\textbf{V3 (Software Baseline)}: Full C library enabled, floating-point operations executed in software.
+
+\textbf{V4 (Hardware Multiplier)}: Nios II configured with 3$\times$16-bit embedded multipliers.
+
+\textbf{V5 (Custom Instruction Demo)}: Integer multiplier implemented as a custom instruction and verified through simulation.
+
+\textbf{V6 (Floating-Point Hardware Units)}: Floating-point add/subtract and multiply units instantiated as custom instructions.
+
+These configurations allow comparison of incremental hardware acceleration techniques.
+
+% ============================================================
