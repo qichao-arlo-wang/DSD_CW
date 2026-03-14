@@ -54,6 +54,12 @@
 #elif TASK7_MODE == 3
 
 #define CI_STEP3_FX(a) ALT_CI_CUSTOM_SINGLE_F_ACCELERATOR_0((a), 0u)
+/* Step-3 reduction uses custom fp add to avoid CPU-side float accumulate cost. */
+#define CI_STEP3_ACC_ADD(a, b) ALT_CI_CUSTOM_FP_ADD_0((a), (b))
+
+#if !defined(ALT_CI_CUSTOM_FP_ADD_0_N)
+#error "TASK7_MODE=3 requires custom fp add CI (ALT_CI_CUSTOM_FP_ADD_0)."
+#endif
 
 #elif TASK7_MODE == 4
 
@@ -304,6 +310,18 @@ static float compute_fx(const float x[], int len, profile_t *p) {
     }
 
     sum = u32_to_f32(acc);
+
+#elif TASK7_MODE == 3
+
+    /* Keep Step-3 reduction fully on custom FP path (no CPU float add in loop). */
+    uint32_t sum_bits = f32_to_u32(0.0f);
+
+    for (int i = 0; i < len; i++) {
+        uint32_t fx_bits = f32_to_u32(eval_fx(x[i], p));
+        sum_bits = CI_STEP3_ACC_ADD(sum_bits, fx_bits);
+    }
+
+    sum = u32_to_f32(sum_bits);
 
 #else
 
