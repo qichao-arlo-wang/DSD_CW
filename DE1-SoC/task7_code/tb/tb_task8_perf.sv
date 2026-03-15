@@ -2,15 +2,11 @@
 
 //------------------------------------------------------------------------------
 // Purpose:
-//   Cycle-level latency sanity test for the optimized stateless Task 8 CI block.
+//   Cycle-level latency sanity test for stateless Task 8 CI block.
 //
 // What this test checks:
 //   - Baseline Task 7 single-f(x) call latency.
 //   - Task 8 accumulate call latency and chained-accum correctness.
-//   - The Task 8 call must not regress to a slower "Step-3 + extra adder"
-//     implementation. With the optimized flattened datapath, accumulation is
-//     overlapped with the existing critical path and should therefore be no
-//     slower than the standalone Task-7 f(x) call under the default setup.
 //------------------------------------------------------------------------------
 module tb_task8_perf;
     logic clk;
@@ -46,7 +42,7 @@ module tb_task8_perf;
         .result(result_fx_unused)
     );
 
-    task8_ci_f2_accum_opt u_t8 (
+    task8_ci_f2_accum u_t8 (
         .clk(clk),
         .reset(reset),
         .clk_en(clk_en),
@@ -217,11 +213,6 @@ module tb_task8_perf;
         y_acc_ref = ref_f(64.0) + ref_f(63.0);
         check_close("t8_call2", y_acc_2, y_acc_ref);
 
-        if (c_t8_1 > c_fx) begin
-            $fatal(1,
-                   "Optimized Task8 latency regressed: task8=%0d cycles, task7=%0d cycles",
-                   c_t8_1, c_fx);
-        end
         if (c_t8_2 != c_t8_1) begin
             $fatal(1,
                    "Task8 chained calls should have stable latency: first=%0d second=%0d",

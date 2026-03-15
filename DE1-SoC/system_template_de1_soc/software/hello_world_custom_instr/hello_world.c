@@ -14,7 +14,9 @@
  * Output is intentionally kept concise to reduce measurement perturbation.
  */
 
+#ifndef TASK7_MODE
 #define TASK7_MODE 2
+#endif
 
 /* 0: only coarse total ticks around the whole run (recommended for rerun timing). */
 /* 1: also record per-CI call wrapper timing/counters (adds perturbation). */
@@ -33,7 +35,7 @@
  * mode 2 -> split operators (mul/add/sub/cos),
  * mode 3 -> single fused f(x) operator,
  * mode 4 -> original Task-8 accumulate wrapper,
- * mode 5 -> optimized Task-8 accumulate wrapper.
+ * mode 5 -> stateful Task-8 pipelined frame CI (INIT/PUSH/GET_RESULT).
  */
 #if TASK7_MODE == 2
 
@@ -58,11 +60,45 @@
 
 #elif TASK7_MODE == 5
 
-#if defined(ALT_CI_CUSTOM_F_ACCUM_OPT_0)
-#define CI_STEP8_ACCUM(acc, x) ALT_CI_CUSTOM_F_ACCUM_OPT_0((acc), (x))
-#else
-#error "TASK7_MODE=5 requires optimized Task-8 CI macro ALT_CI_CUSTOM_F_ACCUM_OPT_0."
+/*
+ * Extended custom instruction for the pipelined Task-8 frame reducer.
+ *
+ * Platform Designer must expose the component instance as CUSTOM_FSUM_PIPE so
+ * that system.h defines ALT_CI_CUSTOM_FSUM_PIPE_0_N. If you use a different
+ * instance name, update the symbol below to match the generated system.h entry.
+ */
+#if !defined(ALT_CI_CUSTOM_FSUM_PIPE_0_N)
+#error "TASK7_MODE=5 requires ALT_CI_CUSTOM_FSUM_PIPE_0_N from system.h."
 #endif
+
+#define CI_STEP8_PIPE_BASE_N ALT_CI_CUSTOM_FSUM_PIPE_0_N
+#define CI_STEP8_PIPE_OP_INIT 0u
+#define CI_STEP8_PIPE_OP_PUSH_X 1u
+#define CI_STEP8_PIPE_OP_GET_RESULT 2u
+#define CI_STEP8_PIPE_OP_GET_STATUS 3u
+#define CI_STEP8_PIPE_OP_GET_ACCEPTED 4u
+#define CI_STEP8_PIPE_OP_GET_FX_COUNT 5u
+#define CI_STEP8_PIPE_OP_GET_REDUCED 6u
+
+#define CI_STEP8_PIPE_RAW(op, a, b) \
+    ((uint32_t)__builtin_custom_inii((int)(CI_STEP8_PIPE_BASE_N + ((op) & 0xffu)), \
+                                     (int)(uint32_t)(a),                                  \
+                                     (int)(uint32_t)(b)))
+
+#define CI_STEP8_PIPE_INIT(len) \
+    CI_STEP8_PIPE_RAW(CI_STEP8_PIPE_OP_INIT, (len), 0u)
+#define CI_STEP8_PIPE_PUSH_X(x_bits) \
+    CI_STEP8_PIPE_RAW(CI_STEP8_PIPE_OP_PUSH_X, (x_bits), 0u)
+#define CI_STEP8_PIPE_GET_RESULT() \
+    CI_STEP8_PIPE_RAW(CI_STEP8_PIPE_OP_GET_RESULT, 0u, 0u)
+#define CI_STEP8_PIPE_GET_STATUS() \
+    CI_STEP8_PIPE_RAW(CI_STEP8_PIPE_OP_GET_STATUS, 0u, 0u)
+#define CI_STEP8_PIPE_GET_ACCEPTED() \
+    CI_STEP8_PIPE_RAW(CI_STEP8_PIPE_OP_GET_ACCEPTED, 0u, 0u)
+#define CI_STEP8_PIPE_GET_FX_COUNT() \
+    CI_STEP8_PIPE_RAW(CI_STEP8_PIPE_OP_GET_FX_COUNT, 0u, 0u)
+#define CI_STEP8_PIPE_GET_REDUCED() \
+    CI_STEP8_PIPE_RAW(CI_STEP8_PIPE_OP_GET_REDUCED, 0u, 0u)
 
 #endif
 
@@ -205,6 +241,40 @@ static uint32_t ci_cos(uint32_t a, profile_t *p) {
 
 #endif
 
+#if TASK7_MODE == 5
+
+/*
+ * Task-8 pipelined frame CI helper:
+ *   1. INIT(len)
+ *   2. PUSH_X(x_i) for each sample
+ *   3. GET_RESULT() blocks until frame completion and returns F(X)
+ *
+ * Status bit assignment matches task8_ci_fsum_pipe.sv:
+ *   bit0 busy
+ *   bit1 in_ready
+ *   bit2 frame_done_latched
+ *   bit3 core_error_latched
+ *   bit4 protocol_error_latched
+ */
+static uint32_t step8_pipe_compute(const float x[], int len) {
+    uint32_t status_bits;
+
+    CI_STEP8_PIPE_INIT((uint32_t)len);
+
+    for (int i = 0; i < len; i++) {
+        CI_STEP8_PIPE_PUSH_X(f32_to_u32(x[i]));
+    }
+
+    status_bits = CI_STEP8_PIPE_GET_STATUS();
+    if ((status_bits & ((1u << 3) | (1u << 4))) != 0u) {
+        printf("[Step-4-pipe][warn] status_before_result=0x%08x\n", status_bits);
+    }
+
+    return CI_STEP8_PIPE_GET_RESULT();
+}
+
+#endif
+
 #if TASK7_MODE == 2
 
 /* Split-CI implementation of:
@@ -236,6 +306,7 @@ static float eval_fx(float x, profile_t *p) {
 
 /* Fused single-CI implementation of f(x) (Step-3). */
 static float eval_fx(float x, profile_t *p) {
+    (void)p;
 
     uint32_t xb = f32_to_u32(x);
     uint32_t r = CI_STEP3_FX(xb);
@@ -247,10 +318,11 @@ static float eval_fx(float x, profile_t *p) {
 
 /* Compute full reduction F(X) = sum_i f(x_i). */
 static float compute_fx(const float x[], int len, profile_t *p) {
+    (void)p;
 
     float sum = 0.0f;
 
-#if TASK7_MODE == 4 || TASK7_MODE == 5
+#if TASK7_MODE == 4
 
     uint32_t acc = f32_to_u32(0.0f);
 
@@ -262,6 +334,10 @@ static float compute_fx(const float x[], int len, profile_t *p) {
     }
 
     sum = u32_to_f32(acc);
+
+#elif TASK7_MODE == 5
+
+    sum = u32_to_f32(step8_pipe_compute(x, len));
 
 #elif TASK7_MODE == 3
 
@@ -451,24 +527,24 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
 
 #elif TASK7_MODE == 5
 
-    printf("\n[Step-4-opt][%s] len=%d step=%.9g runs=%d\n",
+    printf("\n[Step-4-pipe][%s] len=%d step=%.9g runs=%d\n",
            cfg->tag,
            cfg->len,
            (double)cfg->step,
            NUM_RUNS);
 
-    printf("[Step-4-opt][%s] F_hw=%.10e F_ref=%.10e abs_err=%.3e rel_err=%.3e\n",
+    printf("[Step-4-pipe][%s] F_hw=%.10e F_ref=%.10e abs_err=%.3e rel_err=%.3e\n",
            cfg->tag,
            (double)hw_out,
            ref_out,
            abs_err,
            rel_err);
 
-    printf("[Step-4-opt][%s] total=%lu ticks avg=%lu ticks/run\n",
+    printf("[Step-4-pipe][%s] total=%lu ticks avg=%lu ticks/run\n",
            cfg->tag,
            total_ticks,
            (unsigned long)(total_ticks / NUM_RUNS));
-    
+
 #endif
 }
 
@@ -489,6 +565,10 @@ int main(void) {
 
     printf("Task7 software run started. tick_hz=%d\n",
            ALT_SYS_CLK_TICKS_PER_SEC);
+
+#if TASK7_MODE == 5
+    printf("CI opcode: fsum_pipe=%u\n", (unsigned)CI_STEP8_PIPE_BASE_N);
+#endif
 
     for (int i = 0; i < case_count; i++) {
         run_case(&cases[i], xbuf);
