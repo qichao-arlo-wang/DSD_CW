@@ -321,7 +321,7 @@
   <parameter name="cpuArchRev" value="1" />
   <parameter name="cpuID" value="0" />
   <parameter name="cpuReset" value="false" />
-  <parameter name="customInstSlavesSystemInfo"><![CDATA[<info><slave name="custom_f_accum_0" baseAddress="0" addressSpan="1" clockCycleType="VARIABLE" /></info>]]></parameter>
+  <parameter name="customInstSlavesSystemInfo"><![CDATA[<info><slave name="custom_fp_add_0" baseAddress="0" addressSpan="1" clockCycleType="VARIABLE" /><slave name="custom_fp_sub_0" baseAddress="1" addressSpan="1" clockCycleType="VARIABLE" /><slave name="custom_fp_mul_0" baseAddress="2" addressSpan="1" clockCycleType="VARIABLE" /><slave name="custom_cos" baseAddress="3" addressSpan="1" clockCycleType="VARIABLE" /></info>]]></parameter>
   <parameter name="customInstSlavesSystemInfo_nios_a" value="&lt;info/&gt;" />
   <parameter name="customInstSlavesSystemInfo_nios_b" value="&lt;info/&gt;" />
   <parameter name="customInstSlavesSystemInfo_nios_c" value="&lt;info/&gt;" />
@@ -486,7 +486,7 @@
   <parameter name="tracefilename" value="" />
   <parameter name="userDefinedSettings" value="" />
  </module>
- <module name="custom_cos" kind="custom_cos" version="1.0" enabled="0">
+ <module name="custom_cos" kind="custom_cos" version="1.0" enabled="1">
   <parameter name="CORDIC_FRAC" value="22" />
   <parameter name="CORDIC_ITER" value="18" />
   <parameter name="CORDIC_ITER_PER_CYCLE" value="1" />
@@ -494,7 +494,7 @@
   <parameter name="FX_FRAC" value="22" />
   <parameter name="FX_W" value="40" />
  </module>
- <module name="custom_f_accum" kind="custom_f_accum" version="1.0" enabled="1">
+ <module name="custom_f_accum" kind="custom_f_accum" version="1.0" enabled="0">
   <parameter name="ADD_LATENCY" value="3" />
   <parameter name="CORDIC_FRAC" value="22" />
   <parameter name="CORDIC_ITER" value="18" />
@@ -504,13 +504,13 @@
   <parameter name="FX_W" value="40" />
   <parameter name="MUL_LATENCY" value="3" />
  </module>
- <module name="custom_fp_add" kind="custom_fp_add" version="1.0" enabled="0">
+ <module name="custom_fp_add" kind="custom_fp_add" version="1.0" enabled="1">
   <parameter name="ADD_LATENCY" value="3" />
  </module>
- <module name="custom_fp_mul" kind="custom_fp_mul" version="1.0" enabled="0">
+ <module name="custom_fp_mul" kind="custom_fp_mul" version="1.0" enabled="1">
   <parameter name="MUL_LATENCY" value="3" />
  </module>
- <module name="custom_fp_sub" kind="custom_fp_sub" version="1.0" enabled="0">
+ <module name="custom_fp_sub" kind="custom_fp_sub" version="1.0" enabled="1">
   <parameter name="SUB_LATENCY" value="3" />
  </module>
  <module
