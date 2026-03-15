@@ -31,8 +31,9 @@
 
 /* CI binding:
  * mode 2 -> split operators (mul/add/sub/cos),
- * mode 3 -> single fused f(x) operator.
- * mode 4 -> task8 full accu fx
+ * mode 3 -> single fused f(x) operator,
+ * mode 4 -> original Task-8 accumulate wrapper,
+ * mode 5 -> optimized Task-8 accumulate wrapper.
  */
 #if TASK7_MODE == 2
 
@@ -54,6 +55,14 @@
 #elif TASK7_MODE == 4
 
 #define CI_STEP8_ACCUM(acc, x) ALT_CI_CUSTOM_F_ACCUM_0((acc), (x))
+
+#elif TASK7_MODE == 5
+
+#if defined(ALT_CI_CUSTOM_F_ACCUM_OPT_0)
+#define CI_STEP8_ACCUM(acc, x) ALT_CI_CUSTOM_F_ACCUM_OPT_0((acc), (x))
+#else
+#error "TASK7_MODE=5 requires optimized Task-8 CI macro ALT_CI_CUSTOM_F_ACCUM_OPT_0."
+#endif
 
 #endif
 
@@ -241,7 +250,7 @@ static float compute_fx(const float x[], int len, profile_t *p) {
 
     float sum = 0.0f;
 
-#if TASK7_MODE == 4
+#if TASK7_MODE == 4 || TASK7_MODE == 5
 
     uint32_t acc = f32_to_u32(0.0f);
 
@@ -436,6 +445,26 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
            rel_err);
 
     printf("[Step-4][%s] total=%lu ticks avg=%lu ticks/run\n",
+           cfg->tag,
+           total_ticks,
+           (unsigned long)(total_ticks / NUM_RUNS));
+
+#elif TASK7_MODE == 5
+
+    printf("\n[Step-4-opt][%s] len=%d step=%.9g runs=%d\n",
+           cfg->tag,
+           cfg->len,
+           (double)cfg->step,
+           NUM_RUNS);
+
+    printf("[Step-4-opt][%s] F_hw=%.10e F_ref=%.10e abs_err=%.3e rel_err=%.3e\n",
+           cfg->tag,
+           (double)hw_out,
+           ref_out,
+           abs_err,
+           rel_err);
+
+    printf("[Step-4-opt][%s] total=%lu ticks avg=%lu ticks/run\n",
            cfg->tag,
            total_ticks,
            (unsigned long)(total_ticks / NUM_RUNS));

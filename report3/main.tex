@@ -15,7 +15,7 @@
 
 % -- Formatting --
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{0.25em}
+\setlength{\parskip}{0.35em}
 \setlength{\textfloatsep}{6pt plus 1pt minus 1pt}
 \setlength{\floatsep}{6pt plus 1pt minus 1pt}
 \setlength{\intextsep}{6pt plus 1pt minus 1pt}
@@ -55,26 +55,7 @@ F(X)=\sum_{k=0}^{N-1} f(x_k),\quad f(x)=0.5x + x^3\cos\left(\frac{x-128}{128}\ri
 \]
 under single-precision floating-point representation.
 
-To keep the report structure consistent with Report 2, this document also introduces an explicit baseline and then reports Task-7/Task-8 results as incremental evolution from that baseline.
-
-\subsection{Baseline from Report 2}
-The baseline used in this report is the Report-2 V6 configuration (FP custom add/sub/mul with \texttt{cosf} in software flow). This baseline is selected to provide a consistent pre-CORDIC reference point for Task-7 and Task-8 comparisons.
-
-\begin{table}[t]
-\centering
-\caption{Baseline adopted from Report 2 (V6).}
-\label{tab:r2_baseline}
-\scriptsize
-\begin{tabular}{lrrr}
-\toprule
-Metric & C2 & C3 & C4 \\
-\midrule
-Latency (ms/run) & 137.0 & 4380.0 & 165.0 \\
-ALMs & \multicolumn{3}{c}{2,103} \\
-DSP blocks & \multicolumn{3}{c}{6} \\
-\bottomrule
-\end{tabular}
-\end{table}
+The baseline used in this report is the Report-2 V6 configuration (FP custom add/sub/mul with \texttt{cosf} in software flow), and later comparison tables use that design as the common pre-CORDIC reference point. For brevity, the rest of the report uses `R2-V6` for this baseline, `T7-S2` and `T7-S3` for Task 7 Step-2 and Step-3, and `T8` for the measured Task-8 integration.
 
 Methodology summary: deterministic vectors C2 ($N=2041$), C3 ($N=65{,}281$), and random C4 ($N=2323$, fixed seed) are evaluated with 10 runs per case. C1 is omitted because its timing is below one tick at 1\,kHz resolution in later implementations. Reported metrics are latency, relative error versus double-precision software reference, and Quartus resource/timing closure at 50\,MHz.
 
@@ -103,15 +84,45 @@ The implementation uses $(18,24,22)$ with \texttt{ITER\_PER\_CYCLE}=3 as a conse
 \label{fig:t7a_ci}
 \end{figure}
 
+Figure~\ref{fig:t7a_ci} shows a clear threshold region. The error drops rapidly from 16 to 18 iterations, then flattens, which means further iterations mostly consume cycles without bringing proportionate accuracy gain for this application. Around the threshold, larger FRAC still helps, but the benefit becomes marginal once the truncation floor dominates the observed Monte Carlo error.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\linewidth]{Images/t7a_error_estimate_vs_mc.png}
+\caption{Analytical $2^{-i}$ trend versus observed Monte Carlo error scale for FRAC$=20$ (shown in $\log_{10}$ domain).}
+\label{fig:t7a_analytic_mc}
+\end{figure}
+
+The second view in Figure~\ref{fig:t7a_analytic_mc} is consistent with the design choice used later in hardware. The analytical $2^{-i}$ decay predicts the early trend well, but the measured error stops following that line once fixed-point effects dominate. This explains why the implementation does not simply maximize $N_{iter}$: after the knee point, extra iterations increase latency more reliably than they improve useful numerical accuracy.
+
 % =============================================================
 \section{Task 7b: CORDIC Architecture and Implementation}
 % =============================================================
 
 \subsection{CORDIC Microarchitecture}
-The cosine block is rotation-mode fixed-point CORDIC with start/busy/done handshake. Final hardware parameters are $N_{iter}=18$, FRAC$=22$, width $W=24$, and \texttt{ITER\_PER\_CYCLE}=3, so the compute stage takes $\lceil18/3\rceil=6$ cycles. Increasing IPC improves cosine-block latency, but Step-2 end-to-end gain is limited by software orchestration overhead.
+The cosine block is rotation-mode fixed-point CORDIC with start/busy/done handshake. Final hardware parameters are $N_{iter}=18$, FRAC$=22$, width $W=24$, and \texttt{ITER\_PER\_CYCLE}=3, so the compute stage takes $\lceil18/3\rceil=6$ cycles. Low-perturbation Step-2 timing confirms the expected trend: for C3, the total latency is 840.1\,ms/run at \texttt{ITER\_PER\_CYCLE}=1, 828.2\,ms/run at 2, and 824.3\,ms/run at 3. The gain from 1 to 3 is therefore only about 1.9\%, which shows that software orchestration still dominates Step-2 end-to-end runtime even though the cosine block itself becomes faster.
+
+\begin{table}[t]
+\centering
+\caption{Low-perturbation Step-2 timing versus \texttt{ITER\_PER\_CYCLE}.}
+\label{tab:t7b_ipc_lp}
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{lrrr}
+\toprule
+IPC & C2 avg (ms) & C3 avg (ms) & C4 avg (ms) \\
+\midrule
+1 & 26 & 840 & 29 \\
+2 & 25 & 828 & 29 \\
+3 & 25 & 824 & 29 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Verification and Timing}
 Standalone CORDIC simulation at $\theta\in\{-1,-0.5,0,0.5,1\}$ passed with maximum absolute error $3.37\times10^{-6}$. The final build uses 3-cycle FP add/sub/mul latency (instead of the earlier 2-cycle attempt) to avoid integration mismatch. Post-fit timing remains closed at 50\,MHz (setup slack 3.106\,ns, hold slack 0.086\,ns, Fmax 59.19\,MHz).
+
+This result also clarifies the role of \texttt{ITER\_PER\_CYCLE}. Increasing it from 1 to 3 reduces the internal CORDIC schedule from 18 cycles to 6 cycles, so it is the correct direction if the cosine engine is examined in isolation. However, the whole T7-S2 path still spends most of its time on repeated software-side CI dispatch and sequencing. Therefore \texttt{ITER\_PER\_CYCLE}=3 is kept because it improves the hardware block at negligible architectural cost, but it is not sufficient by itself to deliver the larger system-level gain required by the marking criteria.
 
 % =============================================================
 \section{Task 7c: Single Custom Instruction Integration}
@@ -127,20 +138,17 @@ The Step-3 block reuses one FP multiplier, one FP adder, and one CORDIC core und
 \subsection{Performance, Resource, and Error Results}
 \begin{table}[t]
 \centering
-\caption{Task 7c summary across C2/C3/C4 (average per run, 10-run measurements).}
+\caption{Task 7c case-wise summary (average per run, 10-run measurements).}
 \label{tab:t7c_summary}
 \scriptsize
 \resizebox{\linewidth}{!}{%
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrrr}
 \toprule
-Metric & C2 & C3 & C4 \\
+Case & Step-2 latency & Step-3 latency & Relative error vs double & Step-3 speedup vs R2 baseline & Speedup (Step-2/Step-3) \\
 \midrule
-Step-2 latency (ms/run) & 63.7 & 2036.7 & 72.4 \\
-Step-3 latency (ms/run) & 7.0 & 220.0 & 8.0 \\
-Speedup (Step-2 / Step-3) & 9.10$\times$ & 9.26$\times$ & 9.05$\times$ \\
-Step-2 speedup vs R2 baseline & 2.15$\times$ & 2.15$\times$ & 2.28$\times$ \\
-Step-3 speedup vs R2 baseline & 19.57$\times$ & 19.91$\times$ & 20.62$\times$ \\
-Relative error vs double & 5.001e-07 & 2.357e-05 & 2.135e-07 \\
+C2 & 63.7 ms & 7.0 ms & 5.001e-07 & 19.57$\times$ & 9.10$\times$ \\
+C3 & 2036.7 ms & 220.0 ms & 2.357e-05 & 19.91$\times$ & 9.26$\times$ \\
+C4 & 72.4 ms & 8.0 ms & 2.135e-07 & 20.62$\times$ & 9.05$\times$ \\
 \bottomrule
 \end{tabular}
 }
@@ -148,7 +156,7 @@ Relative error vs double & 5.001e-07 & 2.357e-05 & 2.135e-07 \\
 
 \begin{table}[t]
 \centering
-\caption{Resource/timing comparison of Step-2 and final Step-3 integration.}
+\caption{Resource/timing comparison of T7-S2 and T7-S3.}
 \label{tab:t7c_resource_compare}
 \scriptsize
 \resizebox{\linewidth}{!}{%
@@ -168,47 +176,46 @@ Fmax \texttt{sopc\_clk} (MHz) & 59.19 & 58.5 \\
 \end{tabular}
 }
 \end{table}
-Step-3 adds only 28 ALMs over Step-2 while preserving timing closure at 50\,MHz.
+T7-S3 adds only 28 ALMs over T7-S2 while preserving timing closure at 50\,MHz.
 
 \subsection{Latency Interpretation}
-Isolated-cycle estimates are lower than Nios-integrated measurements. In Step-2, one sample evaluation requires five FP multiplications, one subtraction, one addition, and one cosine call:
+Isolated-cycle estimates are lower than Nios-integrated measurements. In T7-S2, one sample evaluation requires five FP multiplications, one subtraction, one addition, and one cosine call:
 \[
 T_{\text{Step-2,iso}} = 5\cdot 3 + 1\cdot 3 + 1\cdot 3 + 1\cdot 9 = 30\ \text{cycles/sample}.
 \]
-For C3, this predicts about 39.2\,ms/run at 50\,MHz versus measured 2036.7\,ms/run. Step-3 isolated latency is 21 cycles (about 27.4\,ms/run idealized for C3) versus measured 220.0\,ms/run. The remaining gap is mainly software/interface overhead, but Step-3 significantly reduces it by collapsing call granularity.
+For C3, this predicts about 39.2\,ms/run at 50\,MHz versus measured 2036.7\,ms/run. T7-S3 isolated latency is 21 cycles (about 27.4\,ms/run idealized for C3) versus measured 220.0\,ms/run. The remaining gap is mainly software/interface overhead, but T7-S3 significantly reduces it by collapsing call granularity.
 
 \subsection{Ideal Lower Bound (Dummy Combinational CI)}
 The dummy one-cycle CI was not implemented in this submission; therefore this subsection reports the theoretical lower bound only.
-If one $f(x)$ evaluation took exactly one clock cycle, C3 (65,281 samples) would require 65,281 cycles per run, i.e. 1.306\,ms at 50\,MHz. For the measured 10-run setup, this gives a lower bound of 13.06\,ms total, versus the measured Step-3 total of 2200\,ms. This gap confirms that the current bottleneck is system-level integration overhead rather than arithmetic datapath depth alone.
+If one $f(x)$ evaluation took exactly one clock cycle, C3 (65,281 samples) would require 65,281 cycles per run, i.e. 1.306\,ms at 50\,MHz. For the measured 10-run setup, this gives a lower bound of 13.06\,ms total, versus the measured T7-S3 total of 2200\,ms. This gap confirms that the current bottleneck is system-level integration overhead rather than arithmetic datapath depth alone.
 
 % =============================================================
 \section{Task 8: Throughput-Oriented Final Design}
 % =============================================================
 
-Task 8 targets throughput by moving accumulation into the CI datapath, so each loop iteration performs one accumulator update call. The deployed run uses the current two-operand accumulate interface and reuses Task-7 arithmetic blocks.
+T8 targets throughput by moving accumulation into the CI datapath, so each loop iteration performs one accumulator update call. The deployed run uses the current two-operand accumulate interface and reuses the Task-7 arithmetic blocks.
+
+From a resource perspective, T8 stays very close to T7-S3: ALMs change from 3795 to 3793, DSP usage remains at 1, and on-chip memory usage is unchanged. This indicates that the current throughput-oriented modification is mainly an interface/control refactor rather than a substantially larger datapath.
 
 \subsection{Task 8 Results}
 \begin{table}[t]
 \centering
-\caption{Task-8 Step-4 measured software results (10 runs, 1\,kHz tick source).}
+\caption{T8 case-wise measured results (10 runs, 1\,kHz tick source).}
 \label{tab:t8_results}
-\scriptsize
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{lrrr}
+\footnotesize
+\setlength{\tabcolsep}{2.4pt}
+\begin{tabular}{lrrrr}
 \toprule
-Metric & C2 & C3 & C4 \\
+Case & Lat.(ms) & Rel.err & S/R2 & S/S3 \\
 \midrule
-Latency of $F(x)$ (ms/run) & 3.8 & 123.5 & 4.4 \\
-Speedup vs Step-3 latency & 1.84$\times$ & 1.78$\times$ & 1.82$\times$ \\
-Speedup vs R2 baseline & 36.05$\times$ & 35.47$\times$ & 37.50$\times$ \\
-Relative error vs double & 1.000e+00 & 1.000e+00 & 1.000e+00 \\
-Code size (application image) & N/A & N/A & N/A \\
+C2 & 3.8 & 1.000e+00 & 36.05$\times$ & 1.84$\times$ \\
+C3 & 123.5 & 1.000e+00 & 35.47$\times$ & 1.78$\times$ \\
+C4 & 4.4 & 1.000e+00 & 37.50$\times$ & 1.82$\times$ \\
 \bottomrule
 \end{tabular}
-}
 \end{table}
 
-The C4 run follows the same trend in timing (44 total ticks over 10 runs, i.e. 4.4\,ms/run) and shows the same correctness issue as C2/C3. In this dataset Step-4 outputs are zero, so latency gains are integration-stage observations, not valid functional acceleration results.
+The C4 run follows the same trend in timing (44 total ticks over 10 runs, i.e. 4.4\,ms/run) and shows the same correctness issue as C2/C3. In this T8 dataset the outputs are zero, so latency gains are integration-stage observations, not valid functional acceleration results.
 
 \begin{table}[t]
 \centering
@@ -233,7 +240,9 @@ Fmax \texttt{sopc\_clk} (MHz) & 59.54 \\
 }
 \end{table}
 
-Compared with Task 7 Step-3, this build remains in essentially the same resource class and keeps timing closure at 50\,MHz with positive slack.
+Compared with T7-S3, this build remains in essentially the same resource class and keeps timing closure at 50\,MHz with positive slack.
+
+The measured mismatch is still informative for architecture evaluation. Since timing improves while area and clock closure stay almost unchanged, the current T8 behavior indicates that the throughput-oriented restructuring is directionally correct, but the accumulator interface/reset semantics are not yet fully aligned between software and hardware. In other words, the present T8 numbers demonstrate that the control overhead can be reduced further than in T7-S3, yet they cannot be claimed as final valid acceleration results until correctness is restored.
 
 % =============================================================
 \section{Cross-Task Comparison and Discussion}
@@ -242,35 +251,40 @@ Compared with Task 7 Step-3, this build remains in essentially the same resource
 \subsection{Latency Comparison from Baseline to Task 8}
 \begin{table}[t]
 \centering
-\caption{Cross-stage latency comparison against the Report-2 baseline.}
+\caption{Cross-stage comparison against the R2-V6 baseline.}
 \label{tab:cross_task_compare}
-\scriptsize
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{lrrrr}
+\footnotesize
+\setlength{\tabcolsep}{2.0pt}
+\begin{tabular}{lrrrrrr}
 \toprule
-Stage & C2 (ms/run) & C3 (ms/run) & C4 (ms/run) & C3 speedup vs baseline \\
+Stage & C2(ms) & C3(ms) & C4(ms) & ALMs & DSP & C3 S/R2 \\
 \midrule
-Report-2 V6 baseline & 137.0 & 4380.0 & 165.0 & 1.00$\times$ \\
-Task-7 Step-2 & 63.7 & 2036.7 & 72.4 & 2.15$\times$ \\
-Task-7 Step-3 & 7.0 & 220.0 & 8.0 & 19.91$\times$ \\
-Task-8 Step-4 (timing only) & 3.8 & 123.5 & 4.4 & 35.47$\times$ \\
+R2-V6 & 137.0 & 4380.0 & 165.0 & 2103 & 6 & 1.00$\times$ \\
+T7-S2 & 63.7 & 2036.7 & 72.4 & 3767 & 1 & 2.15$\times$ \\
+T7-S3 & 7.0 & 220.0 & 8.0 & 3795 & 1 & 19.91$\times$ \\
+T8 & 3.8 & 123.5 & 4.4 & 3793 & 1 & 35.47$\times$ \\
 \bottomrule
 \end{tabular}
-}
 \end{table}
 
 \subsection{Key Trade-offs}
-The baseline comparison clarifies the core trade-off. Relative to the Report-2 V6 baseline, Task-7 Step-2 already improves latency because the CORDIC-based cosine path is cheaper than the software \texttt{cosf} bottleneck in V6. Task-7 Step-3 then collapses the inner arithmetic sequence into one custom instruction call per sample and gains a much larger system-level improvement, reaching about $19.91\times$ speedup on C3 relative to baseline while preserving correctness within the measured error bound. This confirms that both algorithm choice (CORDIC replacing \texttt{cosf}) and call granularity are decisive in the Nios-integrated setting.
+The baseline comparison clarifies the core trade-off. Relative to R2-V6, T7-S2 already improves latency because the CORDIC-based cosine path is cheaper than the software \texttt{cosf} bottleneck in V6. T7-S3 then collapses the inner arithmetic sequence into one custom instruction call per sample and gains a much larger system-level improvement, reaching about $19.91\times$ speedup on C3 while preserving correctness within the measured error bound. This confirms that both algorithm choice (CORDIC replacing \texttt{cosf}) and call granularity are decisive in the Nios-integrated setting.
 
-Task-8 Step-4 further reduces reported run time, but current hardware/software integration still shows functional mismatch in the measured dataset (relative error 1.0). Therefore its timing numbers are best interpreted as integration-stage throughput indicators, not final valid acceleration results. In resource terms, the Task-7/Task-8 builds remain in a similar area class and continue to close timing at 50\,MHz, so the remaining bottleneck is primarily interface/control behavior rather than FPGA timing closure.
+T8 further reduces reported run time, but current hardware/software integration still shows functional mismatch in the measured dataset (relative error 1.0). Therefore its timing numbers are best interpreted as integration-stage throughput indicators, not final valid acceleration results. In resource terms, the T7/T8 builds remain in a similar area class and continue to close timing at 50\,MHz, so the remaining bottleneck is primarily interface/control behavior rather than FPGA timing closure.
 
-% =============================================================
+\subsection{Measurement Limits}
+The timing discussion should be interpreted with the measurement method in mind. On-board software timing uses a 1\,kHz tick source, so cases with sub-millisecond run time cannot be distinguished reliably; this is why C1 is excluded from later comparison tables. In addition, detailed per-call profiling was found to perturb Step-2 results, so the report uses the low-perturbation totals for the \texttt{ITER\_PER\_CYCLE} comparison and keeps fine-grained breakdown only as supporting debug evidence rather than as the main reported metric.
+
 \section{Conclusions}
-% =============================================================
+Using R2-V6 as the reference point, the most reliable improvement comes from combining two decisions: replacing the software cosine path with the CORDIC-based implementation selected in Task~7a, and then reducing CPU-visible call granularity in Task~7c. The Task~7a sweep identifies both a minimum passing point and a more conservative implementation point, and the implemented T7-S3 architecture converts that choice into a practical end-to-end gain. The first change removes the dominant transcendental bottleneck, while the second removes most of the repeated software orchestration around the arithmetic chain. As a result, the validated T7-S3 design reaches about $19.91\times$ speedup on C3 relative to the chosen baseline while maintaining acceptable numerical accuracy and 50\,MHz timing closure.
 
-Using the Report-2 V6 result as baseline, the final validated Task-7 architecture shows that the most effective gain comes from combining CORDIC-based cosine with reduced CPU-visible call count. The CORDIC precision study in Task 7a identifies a minimum passing point and a conservative implementation point, and the implemented Task-7 Step-3 single-CI flow reaches about $19.91\times$ C3 speedup versus baseline while maintaining acceptable numerical accuracy and 50\,MHz timing closure.
+Task~8 indicates that still lower latency is possible without materially increasing FPGA resource usage. However, the current on-board T8 dataset is not yet functionally correct, so those timing numbers cannot be claimed as final performance. The remaining engineering problem is therefore narrower than before: the data suggest that arithmetic cost is no longer the main limiter, and the next required improvement is to preserve the T8 throughput-oriented behavior while restoring correct accumulator/reset semantics under the integrated hardware-software interface.
 
-Task-8 measurements indicate additional latency reduction potential beyond Task-7 Step-3, but the current on-board dataset is not yet functionally correct, so those gains cannot be claimed as final performance. The main remaining engineering target is to preserve Task-8 throughput behavior while restoring functional correctness under the integrated CI interface. Once correctness is closed, the same baseline framework used here can directly produce a final validated speedup figure for submission.
+Taken together, the work demonstrates a coherent progression from algorithm study to architectural integration. Task~7a determines a defensible CORDIC operating point, T7-S2 shows that simply accelerating cosine is not sufficient when software dispatch dominates, and T7-S3 provides the strongest validated result by aligning the custom-instruction boundary with the natural function granularity. T8 then serves as an exploratory endpoint that exposes the next bottleneck and the next integration step needed for a fully validated throughput-oriented design.
+
+From an engineering perspective, the most important lesson is that accelerator quality in this coursework is determined less by raw arithmetic latency than by where the hardware-software boundary is drawn. Small operator-level CIs improve individual kernels but leave most loop-control cost in software, whereas function-level integration changes the dominant term in the total runtime. The remaining T8 issue is therefore not a reason to abandon the throughput-oriented direction; instead, it indicates that the next iteration should focus on interface semantics and state management, because the datapath and timing characteristics are already strong enough to support a final corrected design.
+
+The multi-case dataset also helps qualify which results matter most. C2 and C4 confirm that the architectural trends are not specific to one input pattern, but C3 remains the most informative benchmark because its larger sample count suppresses timer quantization effects and amplifies the true end-to-end bottlenecks. For that reason, the reported design choice is driven primarily by the validated C3 comparison against R2-V6 and by the consistency of the same trend across the other cases, rather than by the smallest-run measurements where coarse timing resolution can distort relative differences.
 
 \FloatBarrier
 \end{document}
