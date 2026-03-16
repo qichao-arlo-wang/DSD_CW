@@ -17,6 +17,7 @@ module task8_fp_mul_rr_stage #(
     input  logic clk,
     input  logic reset,
     input  logic clk_en,
+    input  logic clear_frame,
     input  logic in_valid,
     input  logic [31:0] in_a,
     input  logic [31:0] in_b,
@@ -24,6 +25,7 @@ module task8_fp_mul_rr_stage #(
     output logic out_valid,
     output logic [31:0] out_result,
     output logic [SIDE_W-1:0] out_side,
+    output logic empty,
     output logic error
 );
     localparam int PTR_W = (LANES <= 1) ? 1 : $clog2(LANES);
@@ -39,6 +41,7 @@ module task8_fp_mul_rr_stage #(
     logic lane_busy    [0:LANES-1];
     logic lane_done    [0:LANES-1];
     logic lane_pending [0:LANES-1];
+    logic any_pending;
 
     function automatic [PTR_W-1:0] next_ptr(input [PTR_W-1:0] cur);
         begin
@@ -70,6 +73,16 @@ module task8_fp_mul_rr_stage #(
     endgenerate
 
     integer i;
+    always_comb begin
+        any_pending = 1'b0;
+        for (int k = 0; k < LANES; k = k + 1) begin
+            if (lane_pending[k]) begin
+                any_pending = 1'b1;
+            end
+        end
+        empty = !any_pending;
+    end
+
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             issue_ptr  <= '0;
@@ -87,29 +100,42 @@ module task8_fp_mul_rr_stage #(
             end
         end else if (clk_en) begin
             out_valid <= 1'b0;
-            for (i = 0; i < LANES; i = i + 1) begin
-                lane_start[i] <= 1'b0;
-            end
-
-            if (in_valid) begin
-                if (lane_busy[issue_ptr] || lane_pending[issue_ptr]) begin
-                    error <= 1'b1;
-                end else begin
-                    lane_a[issue_ptr]       <= in_a;
-                    lane_b[issue_ptr]       <= in_b;
-                    lane_side[issue_ptr]    <= in_side;
-                    lane_start[issue_ptr]   <= 1'b1;
-                    lane_pending[issue_ptr] <= 1'b1;
-                    issue_ptr               <= next_ptr(issue_ptr);
+            if (clear_frame) begin
+                issue_ptr  <= '0;
+                retire_ptr <= '0;
+                out_valid  <= 1'b0;
+                out_result <= 32'd0;
+                out_side   <= '0;
+                error      <= 1'b0;
+                for (i = 0; i < LANES; i = i + 1) begin
+                    lane_start[i]   <= 1'b0;
+                    lane_pending[i] <= 1'b0;
                 end
-            end
+            end else begin
+                for (i = 0; i < LANES; i = i + 1) begin
+                    lane_start[i] <= 1'b0;
+                end
 
-            if (lane_pending[retire_ptr] && lane_done[retire_ptr]) begin
-                out_valid                <= 1'b1;
-                out_result               <= lane_result[retire_ptr];
-                out_side                 <= lane_side[retire_ptr];
-                lane_pending[retire_ptr] <= 1'b0;
-                retire_ptr               <= next_ptr(retire_ptr);
+                if (in_valid) begin
+                    if (lane_busy[issue_ptr] || lane_pending[issue_ptr]) begin
+                        error <= 1'b1;
+                    end else begin
+                        lane_a[issue_ptr]       <= in_a;
+                        lane_b[issue_ptr]       <= in_b;
+                        lane_side[issue_ptr]    <= in_side;
+                        lane_start[issue_ptr]   <= 1'b1;
+                        lane_pending[issue_ptr] <= 1'b1;
+                        issue_ptr               <= next_ptr(issue_ptr);
+                    end
+                end
+
+                if (lane_pending[retire_ptr] && lane_done[retire_ptr]) begin
+                    out_valid                <= 1'b1;
+                    out_result               <= lane_result[retire_ptr];
+                    out_side                 <= lane_side[retire_ptr];
+                    lane_pending[retire_ptr] <= 1'b0;
+                    retire_ptr               <= next_ptr(retire_ptr);
+                end
             end
         end
     end

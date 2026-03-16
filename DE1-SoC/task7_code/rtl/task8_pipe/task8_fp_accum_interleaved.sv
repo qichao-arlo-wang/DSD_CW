@@ -5,14 +5,17 @@
 // Design Note:
 //   Incoming samples are distributed round-robin across ACC_LANES independent
 //   feedback lanes. This breaks the loop-carried dependency of a single fp32
-//   accumulator and allows one input per cycle when ACC_LANES >= LATENCY+3.
+//   accumulator and allows one input per cycle when ACC_LANES >= LATENCY+4.
 //   Two extra cycles come from the registered parent/child boundary:
 //   one cycle before the child FP add unit sees `start`, and one more before
-//   the parent retire logic sees `done` and clears `lane_pending`.
+//   the parent retire logic sees `done` and clears `lane_pending`. The shared
+//   add wrapper itself waits one extra cycle beyond the base latency before
+//   reporting a result, so the interleaved accumulator also needs one
+//   additional lane.
 //------------------------------------------------------------------------------
 module task8_fp_accum_interleaved #(
     parameter int ADD_LATENCY = 3,
-    parameter int ACC_LANES = ADD_LATENCY + 3
+    parameter int ACC_LANES = ADD_LATENCY + 4
 ) (
     input  logic clk,
     input  logic reset,

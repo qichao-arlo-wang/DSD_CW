@@ -1,10 +1,13 @@
 //------------------------------------------------------------------------------
 // Purpose:
-//   FP add execution unit for Task 7 control FSMs.
+//   FP add execution unit for Task 7/8 control logic.
 //
-// Notes:
-// - Default path is synthesis/IP-compatible (safe for Quartus Analysis & Synthesis).
-// - Define TASK7_FORCE_SIM only for pure RTL simulation without external FP IP.
+// Design note:
+//   The vendor FP IP samples registered operands and updates `q` on a clock
+//   edge. Another always_ff block cannot safely consume that new `q` value on
+//   the same edge, so this wrapper waits one extra cycle, captures `q`, then
+//   asserts `done` one cycle later. On hardware the add IP has behaved one
+//   cycle later than the optimistic sim-model assumption.
 //------------------------------------------------------------------------------
 module task7_fp_add_ip_unit #(
     parameter int LATENCY = 3
@@ -20,18 +23,28 @@ module task7_fp_add_ip_unit #(
     output logic [31:0] result
 );
     localparam int EFF_LATENCY = (LATENCY < 1) ? 1 : LATENCY;
-    localparam int CNT_W = (EFF_LATENCY <= 1) ? 1 : $clog2(EFF_LATENCY);
-    localparam logic [CNT_W-1:0] CNT_INIT = CNT_W'(EFF_LATENCY - 1);
+    localparam int WAIT_CYCLES = EFF_LATENCY + 1;
+    localparam int CNT_W = (WAIT_CYCLES <= 1) ? 1 : $clog2(WAIT_CYCLES + 1);
 
+    typedef enum logic [1:0] {
+        S_IDLE,
+        S_WAIT,
+        S_CAPTURE,
+        S_OUT
+    } state_t;
+
+    state_t state;
     logic [CNT_W-1:0] cnt;
+    logic [31:0] a_reg;
+    logic [31:0] b_reg;
+    logic [31:0] capture_value;
+    logic        op_clk_en;
 
 `ifndef TASK7_FORCE_SIM
 `define TASK7_USE_SYNTH_IMPL
 `endif
 
 `ifdef TASK7_USE_SYNTH_IMPL
-    logic [31:0] a_reg;
-    logic [31:0] b_reg;
     logic [31:0] ip_result;
 
     custom_fp_add u_ip (
@@ -42,32 +55,8 @@ module task7_fp_add_ip_unit #(
         .q     (ip_result)
     );
 
-    always_ff @(posedge clk or posedge reset) begin
-        if (reset) begin
-            busy   <= 1'b0;
-            done   <= 1'b0;
-            result <= 32'd0;
-            cnt    <= '0;
-            a_reg  <= 32'd0;
-            b_reg  <= 32'd0;
-        end else if (clk_en) begin
-            done <= 1'b0;
-
-            if (start && !busy) begin
-                a_reg <= a;
-                b_reg <= b;
-                busy  <= 1'b1;
-                cnt   <= CNT_INIT;
-            end else if (busy) begin
-                if (cnt == 0) begin
-                    busy   <= 1'b0;
-                    done   <= 1'b1;
-                    result <= ip_result;
-                end else begin
-                    cnt <= cnt - 1'b1;
-                end
-            end
-        end
+    always_comb begin
+        capture_value = ip_result;
     end
 `else
     logic [31:0] pending_result;
@@ -87,32 +76,73 @@ module task7_fp_add_ip_unit #(
         end
     endfunction
 
-    always_ff @(posedge clk or posedge reset) begin
-        if (reset) begin
-            busy           <= 1'b0;
-            done           <= 1'b0;
-            result         <= 32'd0;
-            pending_result <= 32'd0;
-            cnt            <= '0;
-        end else if (clk_en) begin
-            done <= 1'b0;
-
-            if (start && !busy) begin
-                busy           <= 1'b1;
-                cnt            <= CNT_INIT;
-                pending_result <= fp_add_model(a, b);
-            end else if (busy) begin
-                if (cnt == 0) begin
-                    busy   <= 1'b0;
-                    done   <= 1'b1;
-                    result <= pending_result;
-                end else begin
-                    cnt <= cnt - 1'b1;
-                end
-            end
-        end
+    always_comb begin
+        capture_value = pending_result;
     end
 `endif
+
+    assign op_clk_en = clk_en || (state != S_IDLE);
+
+    always_ff @(posedge clk or posedge reset) begin
+        if (reset) begin
+            state  <= S_IDLE;
+            busy   <= 1'b0;
+            done   <= 1'b0;
+            result <= 32'd0;
+            cnt    <= '0;
+            a_reg  <= 32'd0;
+            b_reg  <= 32'd0;
+`ifndef TASK7_FORCE_SIM
+`else
+            pending_result <= 32'd0;
+`endif
+        end else if (op_clk_en) begin
+            done <= 1'b0;
+
+            case (state)
+                S_IDLE: begin
+                    busy <= 1'b0;
+                    if (start && clk_en) begin
+                        a_reg <= a;
+                        b_reg <= b;
+`ifndef TASK7_FORCE_SIM
+`else
+                        pending_result <= fp_add_model(a, b);
+`endif
+                        cnt   <= CNT_W'(WAIT_CYCLES - 1);
+                        busy  <= 1'b1;
+                        state <= S_WAIT;
+                    end
+                end
+
+                S_WAIT: begin
+                    busy <= 1'b1;
+                    if (cnt == 0) begin
+                        state <= S_CAPTURE;
+                    end else begin
+                        cnt <= cnt - CNT_W'(1);
+                    end
+                end
+
+                S_CAPTURE: begin
+                    busy   <= 1'b1;
+                    result <= capture_value;
+                    state  <= S_OUT;
+                end
+
+                S_OUT: begin
+                    busy <= 1'b0;
+                    done <= 1'b1;
+                    state <= S_IDLE;
+                end
+
+                default: begin
+                    state <= S_IDLE;
+                    busy  <= 1'b0;
+                end
+            endcase
+        end
+    end
 
 `ifdef TASK7_USE_SYNTH_IMPL
 `undef TASK7_USE_SYNTH_IMPL

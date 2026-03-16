@@ -23,7 +23,7 @@ module task8_pipe_fsum_core #(
     parameter int MUL_LATENCY = 3,
     parameter int ADD_LATENCY = 3,
     parameter int MUL_LANES = MUL_LATENCY + 3,
-    parameter int ADD_LANES = ADD_LATENCY + 3,
+    parameter int ADD_LANES = ADD_LATENCY + 4,
     parameter int X3_FIFO_DEPTH = 32
 ) (
     input  logic clk,
@@ -46,6 +46,11 @@ module task8_pipe_fsum_core #(
         $signed({{(FX_W-8){1'b0}}, 8'd128}) <<< FX_FRAC;
     localparam logic signed [FX_W-1:0] ONE_ANGLE =
         $signed({{(FX_W-1){1'b0}}, 1'b1}) <<< FX_FRAC;
+    localparam int SAMPLE_ID_W = 32;
+    localparam int X2_SIDE_W = SAMPLE_ID_W + 64;
+    localparam int X3_SIDE_W = SAMPLE_ID_W + 32;
+    localparam int X3_ENTRY_W = SAMPLE_ID_W + 64;
+    localparam int COS_ENTRY_W = SAMPLE_ID_W + 32;
     localparam int FIFO_PTR_W = (X3_FIFO_DEPTH <= 1) ? 1 : $clog2(X3_FIFO_DEPTH);
     localparam logic [FIFO_PTR_W:0] X3_FIFO_DEPTH_W = X3_FIFO_DEPTH[FIFO_PTR_W:0];
 
@@ -71,30 +76,54 @@ module task8_pipe_fsum_core #(
 
     logic        x2_valid;
     logic [31:0] x2_value;
-    logic [63:0] x2_side;
+    logic [X2_SIDE_W-1:0] x2_side;
+    logic        x2_stage_empty;
     logic        x2_error;
 
     logic        x3_valid;
     logic [31:0] x3_value;
-    logic [31:0] x3_side;
+    logic [X3_SIDE_W-1:0] x3_side;
+    logic        x3_stage_empty;
     logic        x3_error;
 
-    logic [63:0] x3_fifo_mem [0:X3_FIFO_DEPTH-1];
+    logic [X3_ENTRY_W-1:0] x3_fifo_mem [0:X3_FIFO_DEPTH-1];
     logic [FIFO_PTR_W-1:0] x3_wr_ptr;
     logic [FIFO_PTR_W-1:0] x3_rd_ptr;
     logic [FIFO_PTR_W:0]   x3_count;
-    logic [63:0] x3_head;
+    logic [X3_ENTRY_W-1:0] x3_head;
     logic        x3_push;
     logic        x3_pop;
+
+    logic [SAMPLE_ID_W-1:0] cos_issue_fifo [0:X3_FIFO_DEPTH-1];
+    logic [FIFO_PTR_W-1:0]  cos_issue_wr_ptr;
+    logic [FIFO_PTR_W-1:0]  cos_issue_rd_ptr;
+    logic [FIFO_PTR_W:0]    cos_issue_count;
+    logic [SAMPLE_ID_W-1:0] cos_issue_head;
+    logic                   cos_issue_push;
+    logic                   cos_issue_pop;
+
+    logic [COS_ENTRY_W-1:0] cos_fifo_mem [0:X3_FIFO_DEPTH-1];
+    logic [FIFO_PTR_W-1:0]  cos_wr_ptr;
+    logic [FIFO_PTR_W-1:0]  cos_rd_ptr;
+    logic [FIFO_PTR_W:0]    cos_count;
+    logic [COS_ENTRY_W-1:0] cos_head;
+    logic                   cos_push;
+    logic                   cos_pop;
+
+    logic                   pair_valid;
+    logic [SAMPLE_ID_W-1:0] x3_head_id;
+    logic [SAMPLE_ID_W-1:0] cos_head_id;
 
     logic        term_valid;
     logic [31:0] term_value;
     logic [31:0] term_side;
+    logic        term_stage_empty;
     logic        term_error;
 
     logic        fx_valid;
     logic [31:0] fx_value;
     logic [0:0]  fx_side_unused;
+    logic        fx_stage_empty;
     logic        fx_error;
 
     logic        acc_start;
@@ -103,6 +132,10 @@ module task8_pipe_fsum_core #(
     logic [31:0] acc_sum;
     logic [31:0] acc_reduced;
     logic        acc_error;
+    logic        acc_done_latched;
+    logic [31:0] acc_sum_latched;
+    logic        frame_clear;
+    logic        pipeline_drained;
 
     function automatic logic signed [CORDIC_W-1:0] angle_to_cordic(
         input logic signed [FX_W-1:0] x_in
@@ -195,42 +228,55 @@ module task8_pipe_fsum_core #(
     task8_fp_mul_rr_stage #(
         .LATENCY(MUL_LATENCY),
         .LANES(MUL_LANES),
-        .SIDE_W(64)
+        .SIDE_W(X2_SIDE_W)
     ) u_x2_stage (
         .clk(clk),
         .reset(reset),
         .clk_en(clk_en),
+        .clear_frame(frame_clear),
         .in_valid((state == S_RUN) && in_valid && in_ready),
         .in_a(in_data),
         .in_b(in_data),
-        .in_side({half_x_wire, in_data}),
+        .in_side({accepted_count, half_x_wire, in_data}),
         .out_valid(x2_valid),
         .out_result(x2_value),
         .out_side(x2_side),
+        .empty(x2_stage_empty),
         .error(x2_error)
     );
 
     task8_fp_mul_rr_stage #(
         .LATENCY(MUL_LATENCY),
         .LANES(MUL_LANES),
-        .SIDE_W(32)
+        .SIDE_W(X3_SIDE_W)
     ) u_x3_stage (
         .clk(clk),
         .reset(reset),
         .clk_en(clk_en),
+        .clear_frame(frame_clear),
         .in_valid(x2_valid),
         .in_a(x2_value),
         .in_b(x2_side[31:0]),
-        .in_side(x2_side[63:32]),
+        .in_side(x2_side[X2_SIDE_W-1:32]),
         .out_valid(x3_valid),
         .out_result(x3_value),
         .out_side(x3_side),
+        .empty(x3_stage_empty),
         .error(x3_error)
     );
 
     assign x3_head = x3_fifo_mem[x3_rd_ptr];
+    assign cos_issue_head = cos_issue_fifo[cos_issue_rd_ptr];
+    assign cos_head = cos_fifo_mem[cos_rd_ptr];
     assign x3_push = x3_valid;
-    assign x3_pop  = cos_valid && (x3_count != 0);
+    assign cos_issue_push = (state == S_RUN) && in_valid && in_ready;
+    assign cos_issue_pop = cos_valid;
+    assign cos_push = cos_valid && (cos_issue_count != 0);
+    assign x3_head_id = x3_head[X3_ENTRY_W-1 -: SAMPLE_ID_W];
+    assign cos_head_id = cos_head[COS_ENTRY_W-1 -: SAMPLE_ID_W];
+    assign pair_valid = (x3_count != 0) && (cos_count != 0) && (x3_head_id == cos_head_id);
+    assign x3_pop = pair_valid;
+    assign cos_pop = pair_valid;
 
     task8_fp_mul_rr_stage #(
         .LATENCY(MUL_LATENCY),
@@ -240,13 +286,15 @@ module task8_pipe_fsum_core #(
         .clk(clk),
         .reset(reset),
         .clk_en(clk_en),
-        .in_valid(x3_pop),
+        .clear_frame(frame_clear),
+        .in_valid(pair_valid),
         .in_a(x3_head[63:32]),
-        .in_b(cos_fp),
+        .in_b(cos_head[31:0]),
         .in_side(x3_head[31:0]),
         .out_valid(term_valid),
         .out_result(term_value),
         .out_side(term_side),
+        .empty(term_stage_empty),
         .error(term_error)
     );
 
@@ -258,6 +306,7 @@ module task8_pipe_fsum_core #(
         .clk(clk),
         .reset(reset),
         .clk_en(clk_en),
+        .clear_frame(frame_clear),
         .in_valid(term_valid),
         .in_a(term_value),
         .in_b(term_side),
@@ -265,6 +314,7 @@ module task8_pipe_fsum_core #(
         .out_valid(fx_valid),
         .out_result(fx_value),
         .out_side(fx_side_unused),
+        .empty(fx_stage_empty),
         .error(fx_error)
     );
 
@@ -291,6 +341,20 @@ module task8_pipe_fsum_core #(
 
     assign acc_start = (state == S_IDLE) && start;
     assign acc_total_len = acc_start ? len : frame_len;
+    assign frame_clear = acc_start;
+    assign pipeline_drained =
+        x2_stage_empty &&
+        x3_stage_empty &&
+        term_stage_empty &&
+        fx_stage_empty &&
+        (x3_count == 0) &&
+        (cos_issue_count == 0) &&
+        (cos_count == 0) &&
+        !x2_valid &&
+        !x3_valid &&
+        !cos_valid &&
+        !term_valid &&
+        !fx_valid;
 
     integer i;
     always_ff @(posedge clk or posedge reset) begin
@@ -307,29 +371,53 @@ module task8_pipe_fsum_core #(
             fx_count       <= 32'd0;
             reduced_count  <= 32'd0;
             error          <= 1'b0;
+            acc_done_latched <= 1'b0;
+            acc_sum_latched  <= 32'd0;
             x3_wr_ptr      <= '0;
             x3_rd_ptr      <= '0;
             x3_count       <= '0;
+            cos_issue_wr_ptr <= '0;
+            cos_issue_rd_ptr <= '0;
+            cos_issue_count  <= '0;
+            cos_wr_ptr       <= '0;
+            cos_rd_ptr       <= '0;
+            cos_count        <= '0;
             for (i = 0; i < X3_FIFO_DEPTH; i = i + 1) begin
-                x3_fifo_mem[i] <= 64'd0;
+                x3_fifo_mem[i] <= '0;
+                cos_issue_fifo[i] <= '0;
+                cos_fifo_mem[i] <= '0;
             end
         end else if (clk_en) begin
             done         <= 1'b0;
             reduced_count <= acc_reduced;
 
-            if (x2_error || x3_error || term_error || fx_error || acc_error) begin
-                error <= 1'b1;
+            if (acc_done) begin
+                acc_done_latched <= 1'b1;
+                acc_sum_latched  <= acc_sum;
             end
-            if (cos_valid && (x3_count == 0)) begin
+
+            if (x2_error || x3_error || term_error || fx_error || acc_error) begin
                 error <= 1'b1;
             end
             if (x3_push && (x3_count == X3_FIFO_DEPTH_W) && !x3_pop) begin
                 error <= 1'b1;
             end
+            if (cos_issue_push && (cos_issue_count == X3_FIFO_DEPTH_W) && !cos_issue_pop) begin
+                error <= 1'b1;
+            end
+            if (cos_valid && (cos_issue_count == 0)) begin
+                error <= 1'b1;
+            end
+            if (cos_push && (cos_count == X3_FIFO_DEPTH_W) && !cos_pop) begin
+                error <= 1'b1;
+            end
+            if ((x3_count != 0) && (cos_count != 0) && (x3_head_id != cos_head_id)) begin
+                error <= 1'b1;
+            end
 
-            if (x3_push && (!x3_pop || (x3_count != 0))) begin
+            if (x3_push) begin
                 if (x3_count < X3_FIFO_DEPTH_W) begin
-                    x3_fifo_mem[x3_wr_ptr] <= {x3_value, x3_side};
+                    x3_fifo_mem[x3_wr_ptr] <= {x3_side[X3_SIDE_W-1 -: SAMPLE_ID_W], x3_value, x3_side[31:0]};
                     x3_wr_ptr <= (x3_wr_ptr == FIFO_PTR_W'(X3_FIFO_DEPTH - 1)) ? '0 : (x3_wr_ptr + FIFO_PTR_W'(1));
                 end
             end
@@ -339,6 +427,36 @@ module task8_pipe_fsum_core #(
             case ({x3_push, x3_pop})
                 2'b10: if (x3_count < X3_FIFO_DEPTH_W) x3_count <= x3_count + 1'b1;
                 2'b01: if (x3_count != 0) x3_count <= x3_count - 1'b1;
+                default: begin end
+            endcase
+
+            if (cos_issue_push) begin
+                if (cos_issue_count < X3_FIFO_DEPTH_W) begin
+                    cos_issue_fifo[cos_issue_wr_ptr] <= accepted_count;
+                    cos_issue_wr_ptr <= (cos_issue_wr_ptr == FIFO_PTR_W'(X3_FIFO_DEPTH - 1)) ? '0 : (cos_issue_wr_ptr + FIFO_PTR_W'(1));
+                end
+            end
+            if (cos_issue_pop && (cos_issue_count != 0)) begin
+                cos_issue_rd_ptr <= (cos_issue_rd_ptr == FIFO_PTR_W'(X3_FIFO_DEPTH - 1)) ? '0 : (cos_issue_rd_ptr + FIFO_PTR_W'(1));
+            end
+            case ({cos_issue_push, (cos_issue_pop && (cos_issue_count != 0))})
+                2'b10: if (cos_issue_count < X3_FIFO_DEPTH_W) cos_issue_count <= cos_issue_count + 1'b1;
+                2'b01: if (cos_issue_count != 0) cos_issue_count <= cos_issue_count - 1'b1;
+                default: begin end
+            endcase
+
+            if (cos_push) begin
+                if (cos_count < X3_FIFO_DEPTH_W) begin
+                    cos_fifo_mem[cos_wr_ptr] <= {cos_issue_head, cos_fp};
+                    cos_wr_ptr <= (cos_wr_ptr == FIFO_PTR_W'(X3_FIFO_DEPTH - 1)) ? '0 : (cos_wr_ptr + FIFO_PTR_W'(1));
+                end
+            end
+            if (cos_pop) begin
+                cos_rd_ptr <= (cos_rd_ptr == FIFO_PTR_W'(X3_FIFO_DEPTH - 1)) ? '0 : (cos_rd_ptr + FIFO_PTR_W'(1));
+            end
+            case ({cos_push, cos_pop})
+                2'b10: if (cos_count < X3_FIFO_DEPTH_W) cos_count <= cos_count + 1'b1;
+                2'b01: if (cos_count != 0) cos_count <= cos_count - 1'b1;
                 default: begin end
             endcase
 
@@ -358,9 +476,17 @@ module task8_pipe_fsum_core #(
                         reduced_count  <= 32'd0;
                         result         <= 32'd0;
                         error          <= 1'b0;
+                        acc_done_latched <= 1'b0;
+                        acc_sum_latched  <= 32'd0;
                         x3_wr_ptr      <= '0;
                         x3_rd_ptr      <= '0;
                         x3_count       <= '0;
+                        cos_issue_wr_ptr <= '0;
+                        cos_issue_rd_ptr <= '0;
+                        cos_issue_count  <= '0;
+                        cos_wr_ptr       <= '0;
+                        cos_rd_ptr       <= '0;
+                        cos_count        <= '0;
                         if (len == 32'd0) begin
                             in_ready <= 1'b0;
                             busy     <= 1'b0;
@@ -390,8 +516,8 @@ module task8_pipe_fsum_core #(
                 S_WAIT_DONE: begin
                     in_ready <= 1'b0;
                     busy     <= 1'b1;
-                    if (acc_done) begin
-                        result <= acc_sum;
+                    if ((acc_done || acc_done_latched) && pipeline_drained) begin
+                        result <= acc_done ? acc_sum : acc_sum_latched;
                         done   <= 1'b1;
                         busy   <= 1'b0;
                         state  <= S_IDLE;
@@ -412,3 +538,4 @@ module task8_pipe_fsum_core #(
         end
     end
 endmodule
+

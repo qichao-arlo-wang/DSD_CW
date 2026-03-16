@@ -33,7 +33,7 @@ module task8_ci_fsum_pipe #(
     parameter int MUL_LATENCY = 3,
     parameter int ADD_LATENCY = 3,
     parameter int MUL_LANES = MUL_LATENCY + 3,
-    parameter int ADD_LANES = ADD_LATENCY + 3,
+    parameter int ADD_LANES = ADD_LATENCY + 4,
     parameter int X3_FIFO_DEPTH = 32
 ) (
     input  logic        clk,
