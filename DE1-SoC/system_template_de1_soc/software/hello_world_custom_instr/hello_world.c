@@ -35,7 +35,8 @@
  * mode 2 -> split operators (mul/add/sub/cos),
  * mode 3 -> single fused f(x) operator,
  * mode 4 -> original Task-8 accumulate wrapper,
- * mode 5 -> stateful Task-8 pipelined frame CI (INIT/PUSH/GET_RESULT).
+ * mode 5 -> stateful Task-8 pipelined frame CI (INIT/PUSH/GET_RESULT),
+ * mode 6 -> demo replay CI using the same INIT/PUSH/GET_RESULT sequence.
  */
 #if TASK7_MODE == 2
 
@@ -86,6 +87,32 @@
     CI_STEP8_PIPE_RAW(CI_STEP8_PIPE_OP_PUSH_X, (x_bits), 0u)
 #define CI_STEP8_PIPE_GET_RESULT() \
     CI_STEP8_PIPE_RAW(CI_STEP8_PIPE_OP_GET_RESULT, 0u, 0u)
+
+#elif TASK7_MODE == 6
+
+#if !defined(ALT_CI_CUSTOM_F_DEMO_REPLAY_0_N)
+#error "TASK7_MODE=6 requires ALT_CI_CUSTOM_F_DEMO_REPLAY_0_N from system.h."
+#endif
+
+#define CI_DEMO_BASE_N ALT_CI_CUSTOM_F_DEMO_REPLAY_0_N
+#define CI_DEMO_OP_INIT 0u
+#define CI_DEMO_OP_PUSH_X 1u
+#define CI_DEMO_OP_GET_RESULT 2u
+#define CI_DEMO_OP_GET_STATUS 3u
+
+#define CI_DEMO_RAW(op, a, b) \
+    ((uint32_t)__builtin_custom_inii((int)(CI_DEMO_BASE_N + ((op) & 0xffu)), \
+                                     (int)(uint32_t)(a),                      \
+                                     (int)(uint32_t)(b)))
+
+#define CI_DEMO_INIT(len) \
+    CI_DEMO_RAW(CI_DEMO_OP_INIT, (len), 0u)
+#define CI_DEMO_PUSH_X(x_bits) \
+    CI_DEMO_RAW(CI_DEMO_OP_PUSH_X, (x_bits), 0u)
+#define CI_DEMO_GET_RESULT() \
+    CI_DEMO_RAW(CI_DEMO_OP_GET_RESULT, 0u, 0u)
+#define CI_DEMO_GET_STATUS() \
+    CI_DEMO_RAW(CI_DEMO_OP_GET_STATUS, 0u, 0u)
 
 #endif
 
@@ -255,6 +282,28 @@ static uint32_t step8_pipe_compute(const float x[], int len) {
 
 #endif
 
+#if TASK7_MODE == 6
+
+/*
+ * Demo replay helper that mirrors the real pipelined Task-8 software protocol:
+ *   1. INIT(len)
+ *   2. PUSH_X(x_i) for each sample
+ *   3. GET_RESULT() blocks until the replay delay expires
+ *
+ * This keeps the software-visible sequencing identical to TASK7_MODE=5.
+ */
+static uint32_t step8_demo_compute(const float x[], int len) {
+    CI_DEMO_INIT((uint32_t)len);
+
+    for (int i = 0; i < len; i++) {
+        CI_DEMO_PUSH_X(f32_to_u32(x[i]));
+    }
+
+    return CI_DEMO_GET_RESULT();
+}
+
+#endif
+
 #if TASK7_MODE == 2
 
 /* Split-CI implementation of:
@@ -319,6 +368,10 @@ static float compute_fx(const float x[], int len, profile_t *p) {
 
     sum = u32_to_f32(step8_pipe_compute(x, len));
 
+#elif TASK7_MODE == 6
+
+    sum = u32_to_f32(step8_demo_compute(x, len));
+
 #elif TASK7_MODE == 3
 
     /* Keep Step-3 reduction fully on custom FP path (no CPU float add in loop). */
@@ -379,7 +432,6 @@ static void print_profile_line(const char *name,
  * vector generation -> reference evaluation -> repeated HW runs -> report.
  */
 static void run_case(const case_cfg_t *cfg, float xbuf[]) {
-
     profile_t profile = {0};
 
     float hw_out = 0.0f;
@@ -387,7 +439,6 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
     double ref_out;
     double abs_err;
     double rel_err;
-
     unsigned long t0;
     unsigned long t1;
     unsigned long total_ticks;
@@ -525,6 +576,26 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
            total_ticks,
            (unsigned long)(total_ticks / NUM_RUNS));
 
+#elif TASK7_MODE == 6
+
+    printf("\n[Step-4-pipe-demo][%s] len=%d step=%.9g runs=%d\n",
+           cfg->tag,
+           cfg->len,
+           (double)cfg->step,
+           NUM_RUNS);
+
+    printf("[Step-4-pipe-demo][%s] F_hw=%.10e F_ref=%.10e abs_err=%.3e rel_err=%.3e\n",
+           cfg->tag,
+           (double)hw_out,
+           ref_out,
+           abs_err,
+           rel_err);
+
+    printf("[Step-4-pipe-demo][%s] total=%lu ticks avg=%lu ticks/run\n",
+           cfg->tag,
+           total_ticks,
+           (unsigned long)(total_ticks / NUM_RUNS));
+
 #endif
 }
 
@@ -548,6 +619,9 @@ int main(void) {
 
 #if TASK7_MODE == 5
     printf("CI opcode: fsum_pipe=%u\n", (unsigned)CI_STEP8_PIPE_BASE_N);
+#elif TASK7_MODE == 6
+    printf("DEMO MODE - NOT REAL COMPUTATION\n");
+    printf("CI opcode: demo_replay=%u\n", (unsigned)CI_DEMO_BASE_N);
 #endif
 
     for (int i = 0; i < case_count; i++) {
