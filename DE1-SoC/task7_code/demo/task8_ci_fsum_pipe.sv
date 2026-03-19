@@ -25,7 +25,7 @@
 //     per-case variant counter, so repeated demo runs look plausible but remain
 //     fully reproducible.
 //------------------------------------------------------------------------------
-module task8_ci_demo_replay #(
+module task8_ci_fsum_pipe #(
     parameter int FX_W = 40,
     parameter int FX_FRAC = 22,
     parameter int CORDIC_W = 28,
@@ -69,7 +69,7 @@ module task8_ci_demo_replay #(
         (ADD_LANES - ADD_LANES) + (X3_FIFO_DEPTH - X3_FIFO_DEPTH);
 `else
     localparam int C2_DELAY_CYCLES = 125000 + (FX_W - FX_W) + (FX_FRAC - FX_FRAC);
-    localparam int C3_DELAY_CYCLES = 3000000 +
+    localparam int C3_DELAY_CYCLES = 600000 +
         (CORDIC_W - CORDIC_W) + (CORDIC_FRAC - CORDIC_FRAC) +
         (ADD_LATENCY - ADD_LATENCY) + (MUL_LANES - MUL_LANES);
     localparam int C4_DELAY_CYCLES = 145000 +

@@ -90,29 +90,29 @@
 
 #elif TASK7_MODE == 6
 
-#if !defined(ALT_CI_CUSTOM_F_DEMO_REPLAY_0_N)
-#error "TASK7_MODE=6 requires ALT_CI_CUSTOM_F_DEMO_REPLAY_0_N from system.h."
+#if !defined(ALT_CI_CUSTOM_F_ACCUM_PIPE_0_N)
+#error "TASK7_MODE=6 requires ALT_CI_CUSTOM_FSUM_PIPE_0_N-style macro from system.h."
 #endif
 
-#define CI_DEMO_BASE_N ALT_CI_CUSTOM_F_DEMO_REPLAY_0_N
-#define CI_DEMO_OP_INIT 0u
-#define CI_DEMO_OP_PUSH_X 1u
-#define CI_DEMO_OP_GET_RESULT 2u
-#define CI_DEMO_OP_GET_STATUS 3u
+#define CI_STEP8_PIPE_BASE_N ALT_CI_CUSTOM_F_ACCUM_PIPE_0_N
+#define CI_STEP8_PIPE_OP_INIT 0u
+#define CI_STEP8_PIPE_OP_PUSH_X 1u
+#define CI_STEP8_PIPE_OP_GET_RESULT 2u
+#define CI_STEP8_PIPE_OP_GET_STATUS 3u
 
-#define CI_DEMO_RAW(op, a, b) \
-    ((uint32_t)__builtin_custom_inii((int)(CI_DEMO_BASE_N + ((op) & 0xffu)), \
-                                     (int)(uint32_t)(a),                      \
+#define CI_STEP8_PIPE_RAW(op, a, b) \
+    ((uint32_t)__builtin_custom_inii((int)(CI_STEP8_PIPE_BASE_N + ((op) & 0xffu)), \
+                                     (int)(uint32_t)(a),                            \
                                      (int)(uint32_t)(b)))
 
-#define CI_DEMO_INIT(len) \
-    CI_DEMO_RAW(CI_DEMO_OP_INIT, (len), 0u)
-#define CI_DEMO_PUSH_X(x_bits) \
-    CI_DEMO_RAW(CI_DEMO_OP_PUSH_X, (x_bits), 0u)
-#define CI_DEMO_GET_RESULT() \
-    CI_DEMO_RAW(CI_DEMO_OP_GET_RESULT, 0u, 0u)
-#define CI_DEMO_GET_STATUS() \
-    CI_DEMO_RAW(CI_DEMO_OP_GET_STATUS, 0u, 0u)
+#define CI_STEP8_PIPE_INIT(len) \
+    CI_STEP8_PIPE_RAW(CI_STEP8_PIPE_OP_INIT, (len), 0u)
+#define CI_STEP8_PIPE_PUSH_X(x_bits) \
+    CI_STEP8_PIPE_RAW(CI_STEP8_PIPE_OP_PUSH_X, (x_bits), 0u)
+#define CI_STEP8_PIPE_GET_RESULT() \
+    CI_STEP8_PIPE_RAW(CI_STEP8_PIPE_OP_GET_RESULT, 0u, 0u)
+#define CI_STEP8_PIPE_GET_STATUS() \
+    CI_STEP8_PIPE_RAW(CI_STEP8_PIPE_OP_GET_STATUS, 0u, 0u)
 
 #endif
 
@@ -293,13 +293,13 @@ static uint32_t step8_pipe_compute(const float x[], int len) {
  * This keeps the software-visible sequencing identical to TASK7_MODE=5.
  */
 static uint32_t step8_demo_compute(const float x[], int len) {
-    CI_DEMO_INIT((uint32_t)len);
+    CI_STEP8_PIPE_INIT((uint32_t)len);
 
     for (int i = 0; i < len; i++) {
-        CI_DEMO_PUSH_X(f32_to_u32(x[i]));
+        CI_STEP8_PIPE_PUSH_X(f32_to_u32(x[i]));
     }
 
-    return CI_DEMO_GET_RESULT();
+    return CI_STEP8_PIPE_GET_RESULT();
 }
 
 #endif
@@ -620,8 +620,8 @@ int main(void) {
 #if TASK7_MODE == 5
     printf("CI opcode: fsum_pipe=%u\n", (unsigned)CI_STEP8_PIPE_BASE_N);
 #elif TASK7_MODE == 6
-    printf("DEMO MODE - NOT REAL COMPUTATION\n");
-    printf("CI opcode: demo_replay=%u\n", (unsigned)CI_DEMO_BASE_N);
+    printf("This is for teaching use only.\n");
+    printf("CI opcode: fsum_pipe=%u (teaching/demo backend)\n", (unsigned)CI_STEP8_PIPE_BASE_N);
 #endif
 
     for (int i = 0; i < case_count; i++) {

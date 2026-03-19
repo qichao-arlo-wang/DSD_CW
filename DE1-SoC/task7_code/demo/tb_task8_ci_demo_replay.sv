@@ -36,7 +36,7 @@ module tb_task8_ci_demo_replay;
     logic done;
     logic [31:0] result;
 
-    task8_ci_demo_replay dut (
+    task8_ci_fsum_pipe dut (
         .clk(clk),
         .reset(reset),
         .clk_en(clk_en),
