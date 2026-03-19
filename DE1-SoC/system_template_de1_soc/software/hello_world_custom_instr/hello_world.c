@@ -620,7 +620,7 @@ int main(void) {
 #if TASK7_MODE == 5
     printf("CI opcode: fsum_pipe=%u\n", (unsigned)CI_STEP8_PIPE_BASE_N);
 #elif TASK7_MODE == 6
-    printf("This is for teaching use only.\n");
+    printf("这是教学用途的。\n");
     printf("CI opcode: fsum_pipe=%u (teaching/demo backend)\n", (unsigned)CI_STEP8_PIPE_BASE_N);
 #endif
 
