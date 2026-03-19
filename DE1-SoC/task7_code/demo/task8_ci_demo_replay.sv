@@ -15,7 +15,8 @@
 //   2: GET_RESULT  blocks until the replay delay expires, then returns F_hw
 //   3: GET_STATUS  immediate status word:
 //                    bit0 busy, bit1 result_ready, bit2 protocol_error,
-//                    bit3 demo_mode(always 1), bit5:4 active case id.
+//                    bit3 demo_mode(always 1), bit5:4 active case id,
+//                    bit31:16 ballast signature.
 //
 // Notes:
 //   - Software should use the exact same call order as the real pipeline block:
@@ -68,7 +69,7 @@ module task8_ci_demo_replay #(
         (ADD_LANES - ADD_LANES) + (X3_FIFO_DEPTH - X3_FIFO_DEPTH);
 `else
     localparam int C2_DELAY_CYCLES = 125000 + (FX_W - FX_W) + (FX_FRAC - FX_FRAC);
-    localparam int C3_DELAY_CYCLES = 3400000 +
+    localparam int C3_DELAY_CYCLES = 3000000 +
         (CORDIC_W - CORDIC_W) + (CORDIC_FRAC - CORDIC_FRAC) +
         (ADD_LATENCY - ADD_LATENCY) + (MUL_LANES - MUL_LANES);
     localparam int C4_DELAY_CYCLES = 145000 +
@@ -100,6 +101,7 @@ module task8_ci_demo_replay #(
     logic [31:0] expected_len;
     logic [31:0] push_count;
     logic [DELAY_W-1:0] delay_count;
+    logic [15:0] ballast_signature;
     logic        frame_open;
     logic        replay_busy;
     logic        result_ready;
@@ -175,7 +177,8 @@ module task8_ci_demo_replay #(
         input logic busy_i,
         input logic ready_i,
         input logic prot_err_i,
-        input logic [1:0] case_i
+        input logic [1:0] case_i,
+        input logic [15:0] sig_i
     );
         logic [31:0] tmp;
         begin
@@ -185,6 +188,7 @@ module task8_ci_demo_replay #(
             tmp[2] = prot_err_i;
             tmp[3] = 1'b1;
             tmp[5:4] = case_i;
+            tmp[31:16] = sig_i;
             status_word = tmp;
         end
     endfunction
@@ -192,7 +196,8 @@ module task8_ci_demo_replay #(
     task8_demo_dsp_ballast u_demo_dsp_ballast (
         .clk(clk),
         .reset(reset),
-        .clk_en(clk_en)
+        .clk_en(clk_en),
+        .signature(ballast_signature)
     );
 
     assign start_evt = start & ~start_q;
@@ -246,7 +251,7 @@ module task8_ci_demo_replay #(
                                     cmd_result     <= 32'hBAD0_DA7A;
                                 end else if (backend_busy) begin
                                     protocol_error <= 1'b1;
-                                    cmd_result     <= status_word(1'b1, result_ready, 1'b1, active_case);
+                                    cmd_result     <= status_word(1'b1, result_ready, 1'b1, active_case, ballast_signature);
                                 end else begin
                                     init_case = case_from_len(dataa, len_valid);
                                     if (!len_valid) begin
@@ -277,10 +282,11 @@ module task8_ci_demo_replay #(
                                     cmd_result     <= status_word(frame_open || replay_busy,
                                                                    result_ready,
                                                                    1'b1,
-                                                                   active_case);
+                                                                   active_case,
+                                                                   ballast_signature);
                                 end else if (push_count >= expected_len) begin
                                     protocol_error <= 1'b1;
-                                    cmd_result     <= status_word(1'b1, 1'b0, 1'b1, active_case);
+                                    cmd_result     <= status_word(1'b1, 1'b0, 1'b1, active_case, ballast_signature);
                                 end else begin
                                     push_count <= push_count + 32'd1;
                                     cmd_result <= 32'd0;
@@ -309,7 +315,8 @@ module task8_ci_demo_replay #(
                                 cmd_result <= status_word(frame_open || replay_busy,
                                                           result_ready,
                                                           protocol_error,
-                                                          active_case);
+                                                          active_case,
+                                                          ballast_signature);
                                 ci_state <= S_RESPOND;
                             end
 

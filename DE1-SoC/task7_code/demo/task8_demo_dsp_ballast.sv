@@ -16,7 +16,8 @@
 module task8_demo_dsp_ballast (
     input logic clk,
     input logic reset,
-    input logic clk_en
+    input logic clk_en,
+    output logic [15:0] signature
 );
     localparam int DSP_COUNT = 18;
     localparam int ALM_WORDS = 96;
@@ -75,6 +76,8 @@ module task8_demo_dsp_ballast (
             assign prod_wire[g] = a_mul[g] * b_mul[g];
         end
     endgenerate
+
+    assign signature = tap_reg[31:16] ^ tap_reg[15:0];
 
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
