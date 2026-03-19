@@ -30,11 +30,7 @@ module tb_task8_ci_demo_replay_protocol;
     logic done;
     logic [31:0] result;
 
-    task8_ci_demo_replay #(
-        .C2_DELAY_CYCLES(4),
-        .C3_DELAY_CYCLES(6),
-        .C4_DELAY_CYCLES(5)
-    ) dut (
+    task8_ci_demo_replay dut (
         .clk(clk),
         .reset(reset),
         .clk_en(clk_en),

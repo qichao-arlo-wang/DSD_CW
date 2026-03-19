@@ -15,7 +15,7 @@
  */
 
 #ifndef TASK7_MODE
-#define TASK7_MODE 5
+#define TASK7_MODE 6
 #endif
 
 /* 0: only coarse total ticks around the whole run (recommended for rerun timing). */

@@ -36,11 +36,7 @@ module tb_task8_ci_demo_replay;
     logic done;
     logic [31:0] result;
 
-    task8_ci_demo_replay #(
-        .C2_DELAY_CYCLES(5),
-        .C3_DELAY_CYCLES(11),
-        .C4_DELAY_CYCLES(7)
-    ) dut (
+    task8_ci_demo_replay dut (
         .clk(clk),
         .reset(reset),
         .clk_en(clk_en),
