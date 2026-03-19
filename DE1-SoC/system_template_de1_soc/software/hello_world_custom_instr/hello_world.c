@@ -15,7 +15,7 @@
  */
 
 #ifndef TASK7_MODE
-#define TASK7_MODE 6
+#define TASK7_MODE 5
 #endif
 
 /* 0: only coarse total ticks around the whole run (recommended for rerun timing). */
@@ -427,7 +427,6 @@ static void print_profile_line(const char *name,
            per_call);
 }
 #endif
-
 /* Run one configured case:
  * vector generation -> reference evaluation -> repeated HW runs -> report.
  */
@@ -452,7 +451,7 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
 
     t0 = now_ticks();
 
-    for (int k = 0; k < NUM_RUNS; k++) {
+    for (int k = 0; k < NUM_RUN; k++) {
         hw_out = compute_fx(xbuf, cfg->len, &profile);
     }
 

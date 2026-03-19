@@ -110,7 +110,7 @@ set_global_assignment -name SEARCH_PATH "c:/users/arlow/downloads/dsd_cw_materia
 set_global_assignment -name TIMING_ANALYZER_MULTICORNER_ANALYSIS ON
 set_global_assignment -name SMART_RECOMPILE ON
 set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
-set_global_assignment -name OPTIMIZATION_MODE BALANCED
+set_global_assignment -name OPTIMIZATION_MODE "AGGRESSIVE PERFORMANCE"
 set_global_assignment -name SYSTEMVERILOG_FILE ../task7_code/rtl/ci_step3/task7_ci_f_single.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../task7_code/rtl/ci_step2/task7_ci_cos_only.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../task7_code/rtl/ci_step2/task7_ci_fp32_mul.sv

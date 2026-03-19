@@ -69,8 +69,9 @@ module task8_demo_dsp_ballast (
         /* verilator lint_on UNUSEDLOOP */
     end
 
+    genvar g;
     generate
-        for (genvar g = 0; g < DSP_COUNT; g++) begin : gen_dsp_mult
+        for (g = 0; g < DSP_COUNT; g++) begin : gen_dsp_mult
             assign a_mul[g] = a_state[g][17:0];
             assign b_mul[g] = b_state[g][17:0];
             assign prod_wire[g] = a_mul[g] * b_mul[g];

@@ -5,11 +5,11 @@
  version="1.0"
  fabric="QSYS">
  <!-- Format version 23.1 991 (Future versions may contain additional information.) -->
- <!-- 2026.03.15.23:49:40 -->
+ <!-- 2026.03.19.04:10:08 -->
  <!-- A collection of modules and connections -->
  <parameter name="AUTO_GENERATION_ID">
   <type>java.lang.Integer</type>
-  <value>1773618580</value>
+  <value>1773893408</value>
   <derived>false</derived>
   <enabled>true</enabled>
   <visible>false</visible>
@@ -3792,19 +3792,19 @@ parameters are a RESULT of the module parameters. -->
    </port>
    <customInstruction>
     <isBridge>false</isBridge>
-    <moduleName>custom_f_accum_pipe</moduleName>
+    <moduleName>custom_f_accum_pipe_0</moduleName>
     <slaveName>ncs_cis0</slaveName>
-    <name>custom_f_accum_pipe.ncs_cis0</name>
+    <name>custom_f_accum_pipe_0.ncs_cis0</name>
     <opcodeNumber>0</opcodeNumber>
     <opcodeMnemonic>custom_f_accum_pipe_0</opcodeMnemonic>
    </customInstruction>
   </interface>
  </module>
  <module
-   name="custom_f_accum_pipe"
+   name="custom_f_accum_pipe_0"
    kind="custom_f_accum_pipe"
    version="1.0"
-   path="custom_f_accum_pipe">
+   path="custom_f_accum_pipe_0">
   <!-- Describes a single module. Module parameters are
 the requested settings for a module instance. -->
   <parameter name="FX_W">
@@ -7217,7 +7217,7 @@ the requested settings for a module instance. -->
   </assignment>
   <assignment>
    <name>embeddedsw.CMacro.TIMESTAMP</name>
-   <value>1773618580</value>
+   <value>1773893408</value>
   </assignment>
   <assignment>
    <name>embeddedsw.dts.compatible</name>
@@ -7237,7 +7237,7 @@ the requested settings for a module instance. -->
   </assignment>
   <assignment>
    <name>embeddedsw.dts.params.timestamp</name>
-   <value>1773618580</value>
+   <value>1773893408</value>
   </assignment>
   <assignment>
    <name>embeddedsw.dts.vendor</name>
@@ -7253,7 +7253,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="timestamp">
    <type>int</type>
-   <value>1773618580</value>
+   <value>1773893408</value>
    <derived>true</derived>
    <enabled>false</enabled>
    <visible>false</visible>
@@ -8351,11 +8351,11 @@ parameters are a RESULT of the module parameters. -->
   <endConnectionPoint>irq</endConnectionPoint>
  </connection>
  <connection
-   name="cpu.custom_instruction_master/custom_f_accum_pipe.ncs_cis0"
+   name="cpu.custom_instruction_master/custom_f_accum_pipe_0.ncs_cis0"
    kind="nios_custom_instruction"
    version="23.1"
    start="cpu.custom_instruction_master"
-   end="custom_f_accum_pipe.ncs_cis0">
+   end="custom_f_accum_pipe_0.ncs_cis0">
   <parameter name="CIName">
    <type>java.lang.String</type>
    <value>custom_f_accum_pipe_0</value>
@@ -8414,7 +8414,7 @@ parameters are a RESULT of the module parameters. -->
   </parameter>
   <startModule>cpu</startModule>
   <startConnectionPoint>custom_instruction_master</startConnectionPoint>
-  <endModule>custom_f_accum_pipe</endModule>
+  <endModule>custom_f_accum_pipe_0</endModule>
   <endConnectionPoint>ncs_cis0</endConnectionPoint>
  </connection>
  <connection

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<QUARTUS_MAP_OUTPUT>
+    <QUARTUS version="Version 23.1std.0 Build 991 11/28/2023 SC Lite Edition" platform="Windows 10"/>
+    <FILE name="task8_ci_fsum_pipe.sv" path="de1-soc/task7_code/demo/" language="Verilog" languageversion="SYSTEMVERILOG_2005">
+        <MODULE name="task8_ci_fsum_pipe">
+            <PORTS>
+                <PORT name="clk" direction="input" type="std_logic"/>
+                <PORT name="reset" direction="input" type="std_logic"/>
+                <PORT name="clk_en" direction="input" type="std_logic"/>
+                <PORT name="start" direction="input" type="std_logic"/>
+                <PORT name="dataa" direction="input" type="std_logic_vector" rangeleft="31" rangeright="0"/>
+                <PORT name="datab" direction="input" type="std_logic_vector" rangeleft="31" rangeright="0"/>
+                <PORT name="n" direction="input" type="std_logic_vector" rangeleft="7" rangeright="0"/>
+                <PORT name="done" direction="output" type="std_logic"/>
+                <PORT name="result" direction="output" type="std_logic_vector" rangeleft="31" rangeright="0"/>
+            </PORTS>
+            <PARAMETERS>
+                <PARAMETER name="FX_W" value="40" type="int"/>
+                <PARAMETER name="FX_FRAC" value="22" type="int"/>
+                <PARAMETER name="CORDIC_W" value="28" type="int"/>
+                <PARAMETER name="CORDIC_FRAC" value="22" type="int"/>
+                <PARAMETER name="CORDIC_ITER" value="18" type="int"/>
+                <PARAMETER name="MUL_LATENCY" value="3" type="int"/>
+                <PARAMETER name="ADD_LATENCY" value="3" type="int"/>
+                <PARAMETER name="X3_FIFO_DEPTH" value="32" type="int"/>
+            </PARAMETERS>
+        </MODULE>
+    </FILE>
+</QUARTUS_MAP_OUTPUT>
