@@ -109,7 +109,7 @@ module task8_ci_fsum_pipe #(
         end
     endfunction
 
-    task8_demo_dsp_ballast u_demo_dsp_ballast (
+    task8_pipe u_demo_dsp_ballast (
         .clk(clk),
         .reset(reset),
         .clk_en(clk_en),

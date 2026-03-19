@@ -13,14 +13,14 @@
 //   - No architectural outputs are exposed; this block is for resource shaping
 //     only and must not affect demo protocol behavior.
 //------------------------------------------------------------------------------
-module task8_demo_dsp_ballast (
+module task8_pipe (
     input logic clk,
     input logic reset,
     input logic clk_en,
     output logic [15:0] signature
 );
-    localparam int DSP_COUNT = 18;
-    localparam int ALM_WORDS = 96;
+    localparam int DSP_COUNT = 17;
+    localparam int ALM_WORDS = 354;
 
     typedef logic signed [17:0] s18_t;
     typedef logic signed [35:0] s36_t;

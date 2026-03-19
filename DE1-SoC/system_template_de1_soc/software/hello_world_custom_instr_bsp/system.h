@@ -4,7 +4,7 @@
  * Machine generated for CPU 'cpu' in SOPC Builder design 'first_nios2_system'
  * SOPC Builder design path: C:/Users/arlow/Downloads/DSD_CW/DE1-SoC/system_template_de1_soc/first_nios2_system.sopcinfo
  *
- * Generated: Thu Mar 19 04:24:25 GMT 2026
+ * Generated: Thu Mar 19 09:53:06 GMT 2026
  */
 
 /*
@@ -296,15 +296,15 @@
 #define SYS_CLK_TIMER_FREQ 50000000
 #define SYS_CLK_TIMER_IRQ 1
 #define SYS_CLK_TIMER_IRQ_INTERRUPT_CONTROLLER_ID 0
-#define SYS_CLK_TIMER_LOAD_VALUE 49999
+#define SYS_CLK_TIMER_LOAD_VALUE 99999
 #define SYS_CLK_TIMER_MULT 0.001
 #define SYS_CLK_TIMER_NAME "/dev/sys_clk_timer"
-#define SYS_CLK_TIMER_PERIOD 1
+#define SYS_CLK_TIMER_PERIOD 2
 #define SYS_CLK_TIMER_PERIOD_UNITS "ms"
 #define SYS_CLK_TIMER_RESET_OUTPUT 0
 #define SYS_CLK_TIMER_SNAPSHOT 1
 #define SYS_CLK_TIMER_SPAN 32
-#define SYS_CLK_TIMER_TICKS_PER_SEC 1000
+#define SYS_CLK_TIMER_TICKS_PER_SEC 500
 #define SYS_CLK_TIMER_TIMEOUT_PULSE_OUTPUT 0
 #define SYS_CLK_TIMER_TIMER_DEVICE_TYPE 1
 #define SYS_CLK_TIMER_TYPE "altera_avalon_timer"
@@ -322,7 +322,7 @@
 #define SYSID_IRQ_INTERRUPT_CONTROLLER_ID -1
 #define SYSID_NAME "/dev/sysid"
 #define SYSID_SPAN 8
-#define SYSID_TIMESTAMP 1773893408
+#define SYSID_TIMESTAMP 1773912499
 #define SYSID_TYPE "altera_avalon_sysid_qsys"
 
 #endif /* __SYSTEM_H_ */

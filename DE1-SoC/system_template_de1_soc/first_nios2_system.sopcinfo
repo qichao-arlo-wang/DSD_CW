@@ -5,11 +5,11 @@
  version="1.0"
  fabric="QSYS">
  <!-- Format version 23.1 991 (Future versions may contain additional information.) -->
- <!-- 2026.03.19.04:10:08 -->
+ <!-- 2026.03.19.09:28:19 -->
  <!-- A collection of modules and connections -->
  <parameter name="AUTO_GENERATION_ID">
   <type>java.lang.Integer</type>
-  <value>1773893408</value>
+  <value>1773912499</value>
   <derived>false</derived>
   <enabled>true</enabled>
   <visible>false</visible>
@@ -3864,7 +3864,7 @@ the requested settings for a module instance. -->
    <valid>true</valid>
   </parameter>
   <parameter name="X3_FIFO_DEPTH">
-   <type>int</type>
+   <type>java.lang.String</type>
    <value>32</value>
    <derived>false</derived>
    <enabled>true</enabled>
@@ -6443,7 +6443,7 @@ the requested settings for a module instance. -->
   </assignment>
   <assignment>
    <name>embeddedsw.CMacro.LOAD_VALUE</name>
-   <value>49999</value>
+   <value>99999</value>
   </assignment>
   <assignment>
    <name>embeddedsw.CMacro.MULT</name>
@@ -6451,7 +6451,7 @@ the requested settings for a module instance. -->
   </assignment>
   <assignment>
    <name>embeddedsw.CMacro.PERIOD</name>
-   <value>1</value>
+   <value>2</value>
   </assignment>
   <assignment>
    <name>embeddedsw.CMacro.PERIOD_UNITS</name>
@@ -6467,7 +6467,7 @@ the requested settings for a module instance. -->
   </assignment>
   <assignment>
    <name>embeddedsw.CMacro.TICKS_PER_SEC</name>
-   <value>1000</value>
+   <value>500</value>
   </assignment>
   <assignment>
    <name>embeddedsw.CMacro.TIMEOUT_PULSE_OUTPUT</name>
@@ -6523,7 +6523,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="period">
    <type>java.lang.String</type>
-   <value>1</value>
+   <value>2</value>
    <derived>false</derived>
    <enabled>true</enabled>
    <visible>true</visible>
@@ -6605,7 +6605,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="loadValue">
    <type>java.lang.String</type>
-   <value>49999</value>
+   <value>99999</value>
    <derived>true</derived>
    <enabled>true</enabled>
    <visible>false</visible>
@@ -6621,7 +6621,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="ticksPerSec">
    <type>double</type>
-   <value>1000.0</value>
+   <value>500.0</value>
    <derived>true</derived>
    <enabled>true</enabled>
    <visible>false</visible>
@@ -7217,7 +7217,7 @@ the requested settings for a module instance. -->
   </assignment>
   <assignment>
    <name>embeddedsw.CMacro.TIMESTAMP</name>
-   <value>1773893408</value>
+   <value>1773912499</value>
   </assignment>
   <assignment>
    <name>embeddedsw.dts.compatible</name>
@@ -7237,7 +7237,7 @@ the requested settings for a module instance. -->
   </assignment>
   <assignment>
    <name>embeddedsw.dts.params.timestamp</name>
-   <value>1773893408</value>
+   <value>1773912499</value>
   </assignment>
   <assignment>
    <name>embeddedsw.dts.vendor</name>
@@ -7253,7 +7253,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="timestamp">
    <type>int</type>
-   <value>1773893408</value>
+   <value>1773912499</value>
    <derived>true</derived>
    <enabled>false</enabled>
    <visible>false</visible>

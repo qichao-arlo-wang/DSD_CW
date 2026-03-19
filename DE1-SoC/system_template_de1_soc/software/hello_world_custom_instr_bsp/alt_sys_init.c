@@ -4,7 +4,7 @@
  * Machine generated for CPU 'cpu' in SOPC Builder design 'first_nios2_system'
  * SOPC Builder design path: C:/Users/arlow/Downloads/DSD_CW/DE1-SoC/system_template_de1_soc/first_nios2_system.sopcinfo
  *
- * Generated: Thu Mar 19 04:24:25 GMT 2026
+ * Generated: Thu Mar 19 09:53:06 GMT 2026
  */
 
 /*
@@ -62,7 +62,7 @@
 #include "altera_avalon_jtag_uart.h"
 #include "altera_avalon_sysid_qsys.h"
 #include "altera_avalon_timer.h"
-#define NUM_RUN 5
+
 /*
  * Allocate the device storage
  */

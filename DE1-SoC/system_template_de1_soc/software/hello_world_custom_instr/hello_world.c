@@ -451,7 +451,7 @@ static void run_case(const case_cfg_t *cfg, float xbuf[]) {
 
     t0 = now_ticks();
 
-    for (int k = 0; k < NUM_RUN; k++) {
+    for (int k = 0; k < NUM_RUNS; k++) {
         hw_out = compute_fx(xbuf, cfg->len, &profile);
     }
 
